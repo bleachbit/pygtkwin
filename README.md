@@ -5,10 +5,10 @@ to use on Microsoft Windows. This includes introspection support
 and a PyGObject wheel. We use Microsoft Visual C++ and vcpkg instead
 of gcc and msys2.
 
-As of 2025-03-27, this project builds
-* Python 3.11.10
+As of 2025-06-10, this project builds
+* Python 3.11.11
 * GTK 3.24.43
-* PyGObject 3.51.0
+* PyGObject 3.52.3
 
 The build environment is GitHub Actions with MSVC++ 2022.
 For more information about the build environment and build
