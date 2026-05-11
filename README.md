@@ -5,13 +5,13 @@ to use on Microsoft Windows. This includes introspection support
 and a PyGObject wheel. Consistent with PyPI packaging practices, we
 use Microsoft Visual C++ and vcpkg instead of gcc and MSYS2.
 
-As of 2025-11-30, this project builds:
-* Python 3.12.9
-* GTK 3.24.51
-* PyGObject 3.55.0
-* Pango 1.56.4
-* Fontconfig 2.15.0
-* HarfBuzz 12.2.0
+As of 2026-05-10, this project builds:
+* Python 3.12.13
+* GTK 3.24.52
+* PyGObject 3.56.3
+* Pango 1.57.1
+* Fontconfig 2.17.1
+* HarfBuzz 14.2.0
 
 The build environment is GitHub Actions with MSVC++ 2022.
 For more information about the build environment and build
