@@ -157,6 +157,8 @@ jobs:
         env:
           PKG_CONFIG: ${{ env.VCPKG_DIR }}\tools\python3\Lib\site-packages\pkgconf\.bin\pkgconf.exe
           PKG_CONFIG_PATH: ${{ env.VCPKG_DIR }}\lib\pkgconfig
+          CC: cl
+          CXX: cl
         run: |
           for /F "usebackq" %%i in (`${{ env.PKG_CONFIG }} --cflags python-3.12`) do set CL=%%i
           cd pygobject-${{ env.PYGOBJECT_VERSION }}
