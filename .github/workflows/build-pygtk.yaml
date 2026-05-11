@@ -23,7 +23,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      VCPKG_COMMIT: '294b9d097e8486770e922890d6a4b757b7dca5e3'
+      VCPKG_COMMIT: '99a97de2cb371449d4fb9dc970f2ac562d689ec2'
 
     steps:
       - name: Checkout code
@@ -38,7 +38,7 @@ jobs:
           path: |
             ~/.cache/vcpkg/archives
             C:\Users\runneradmin\AppData\Local\vcpkg\archives
-          key: ${{ runner.os }}-vcpkg-${{ env.VCPKG_COMMIT }}-${{ hashFiles('0001-vcpkg-patch.patch') }}
+          key: ${{ runner.os }}-vcpkg-${{ env.VCPKG_COMMIT }}
           restore-keys: |
             ${{ runner.os }}-vcpkg-${{ env.VCPKG_COMMIT }}-
             ${{ runner.os }}-vcpkg-
@@ -49,7 +49,6 @@ jobs:
           git clone https://github.com/microsoft/vcpkg.git ./vcpkg
           cd ./vcpkg
           git checkout ${{ env.VCPKG_COMMIT }}
-          patch -p1 -i ${{ github.workspace }}/0001-vcpkg-patch.patch
           ./bootstrap-vcpkg.bat
           $cacheDir = Join-Path $env:LOCALAPPDATA 'vcpkg\archives'
           New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
@@ -101,12 +100,12 @@ jobs:
     needs: vcpkg-build
 
     env:
-      PYGOBJECT_VERSION: 3.55.0
-      PYGOBJECT_SHA256: 8857ff725922a3b2c42d9f11c1bb609ccc25f319a2c802190a1c09ad267442c7
+      PYGOBJECT_VERSION: 3.56.3
+      PYGOBJECT_SHA256: 12760e4a0e3d04b6eb95e06f7a27e362c826d567ea613373a92c003b6c70d2d6
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up pygtkwin environment
         uses: ./actions/pygtkwin-env
@@ -130,7 +129,7 @@ jobs:
       - name: Download and extract PyGObject source
         shell: bash
         run: |
-          curl -L https://download.gnome.org/sources/pygobject/3.55/pygobject-${{ env.PYGOBJECT_VERSION }}.tar.gz -o pygobject.tar.gz
+          curl -L https://download.gnome.org/sources/pygobject/3.56/pygobject-${{ env.PYGOBJECT_VERSION }}.tar.gz -o pygobject.tar.gz
           certutil -hashfile pygobject.tar.gz SHA256
           echo "${{ env.PYGOBJECT_SHA256 }} pygobject.tar.gz" | sha256sum -c || exit 1
           tar xf pygobject.tar.gz
