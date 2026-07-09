@@ -38,7 +38,7 @@ jobs:
           path: |
             ~/.cache/vcpkg/archives
             C:\Users\runneradmin\AppData\Local\vcpkg\archives
-          key: ${{ runner.os }}-vcpkg-${{ env.VCPKG_COMMIT }}
+          key: ${{ runner.os }}-vcpkg-${{ env.VCPKG_COMMIT }}-${{ hashFiles('0002-vcpkg-glib-unc.patch') }}
           restore-keys: |
             ${{ runner.os }}-vcpkg-${{ env.VCPKG_COMMIT }}-
             ${{ runner.os }}-vcpkg-
@@ -49,6 +49,7 @@ jobs:
           git clone https://github.com/microsoft/vcpkg.git ./vcpkg
           cd ./vcpkg
           git checkout ${{ env.VCPKG_COMMIT }}
+          patch -p1 -i ${{ github.workspace }}/0002-vcpkg-glib-unc.patch
           ./bootstrap-vcpkg.bat
           $cacheDir = Join-Path $env:LOCALAPPDATA 'vcpkg\archives'
           New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
