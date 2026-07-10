@@ -1,0 +1,34 @@
+--- a/meson.build
++++ b/meson.build
+@@ -169,7 +169,6 @@
+   ],
+   install: true,
+   vs_module_defs: librsvg_defs,
+-  soversion: ver_split[0]
+ )
+ 
+ librsvg_ld_args = []
+@@ -204,6 +203,23 @@
+   libraries_private: private_dependencies,
+ )
+ 
++gdk_pixbuf_moduledir = gdk_pixbuf_dep.get_variable(pkgconfig: 'gdk_pixbuf_moduledir')
++
++shared_module('pixbufloader-svg',
++  'gdk-pixbuf-loader/io-svg.c',
++  enums,
++  c_args: [
++    '-DRSVG_COMPILATION',
++    '-DGDK_PIXBUF_ENABLE_BACKEND',
++    '-DG_LOG_DOMAIN="libpixbufloader-svg"',
++  ],
++  include_directories: [librsvg_inc_priv, include_directories('.')],
++  dependencies: [gdk_pixbuf_dep, glib_dep, gio_dep, cairo_dep],
++  link_with: rsvg_lib,
++  install: true,
++  install_dir: gdk_pixbuf_moduledir,
++)
++
+ if get_option('tests').allowed()
+   subdir('tests')
+ endif
