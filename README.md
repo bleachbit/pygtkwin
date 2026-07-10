@@ -31,3 +31,23 @@ Special thanks to @soylent-io and @soreau for their work to keep BleachBit
 running on Windows.
 
 Tip: [nektos/act](https://github.com/nektos/act) is tool for running GitHub Actions locally.
+
+## Viewing run status and logs
+
+Use the [GitHub CLI (`gh`)](https://github.com/cli/cli/).
+
+List recent runs:
+
+```
+$ gh run list
+STATUS  TITLE                              WORKFLOW                 BRANCH  EVENT  ID           ELAPSED  AGE
+✓       Restore vcpkg install for libcroso  Build GTK themes         dev     push   29065380640  1m3s     about 11 hours ago
+X       Restore vcpkg install for libcroso  Build and Package PyGTK  dev     push   29065380636  11m15s   about 11 hours ago
+```
+
+View the log for a specific run. Recent versions of `gh` stream the log
+directly without downloading it first; if the command fails, upgrade `gh`.
+
+```
+$ gh run view 29065380636 --log
+```
