@@ -58,6 +58,7 @@ jobs:
           python -m ensurepip --upgrade
           python -m pip install virtualenv
           ./vcpkg install gobject-introspection:x86-windows --binarysource=$binarySource
+          ./vcpkg install harfbuzz[introspection]:x86-windows pango[introspection]:x86-windows gdk-pixbuf[introspection]:x86-windows atk[introspection]:x86-windows libcroco:x86-windows librsvg:x86-windows --binarysource=$binarySource
           ./vcpkg install gtk3[introspection]:x86-windows --binarysource=$binarySource
 
       - name: Prepare for packing
