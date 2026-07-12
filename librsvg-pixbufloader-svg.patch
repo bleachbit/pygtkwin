@@ -8,7 +8,7 @@
  )
  
  librsvg_ld_args = []
-@@ -204,6 +203,22 @@
+@@ -204,6 +203,23 @@
    libraries_private: private_dependencies,
  )
  
@@ -16,6 +16,7 @@
 +
 +shared_module('pixbufloader-svg',
 +  'gdk-pixbuf-loader/io-svg.c',
++  enums,
 +  c_args: [
 +    '-DRSVG_COMPILATION',
 +    '-DGDK_PIXBUF_ENABLE_BACKEND',
