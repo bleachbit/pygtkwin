@@ -38,6 +38,8 @@ check_glob 'pixbufloader-svg.dll' 'pixbufloader-svg DLL' 'lib/gdk-pixbuf-2.0/2.1
 check_glob 'cairo*.dll'           'cairo DLL'            'bin'
 check_glob 'glib-*.dll'           'glib DLL'             'bin'
 check_glob 'libxml2.dll'          'libxml2 DLL'          'bin'
+check_glob 'GLibWin32-2.0.typelib' 'GLibWin32 typelib'   'lib/girepository-1.0'
+check_glob 'GioWin32-2.0.typelib'  'GioWin32 typelib'    'lib/girepository-1.0'
 
 echo "=== Validation complete: $errors error(s) ==="
 

@@ -68,6 +68,11 @@ jobs:
           ./vcpkg install gtk3[introspection]:x86-windows --binarysource=$binarySource
           if ($LASTEXITCODE -ne 0) { throw "vcpkg install gtk3 failed" }
 
+      - name: Generate platform-specific typelibs
+        shell: bash
+        run: |
+          ./generate-platform-typelibs.sh vcpkg/installed/${{ env.VCPKG_TRIPLET }}
+
       - name: Validate build
         shell: bash
         run: |
@@ -196,6 +201,18 @@ jobs:
           set PATH=%PATH%;${{ env.VCPKG_DIR }}\bin;${{ env.VCPKG_DIR }}\lib
           set GI_TYPELIB_PATH=${{ env.VCPKG_DIR }}\lib\girepository-1.0
           ${{ env.PYTHON }} show_versions.py --dll-directory=${{ env.VCPKG_DIR }}\bin
+
+          set GI_WARNING_LOG=%TEMP%\pygobject-platform-gir-stderr.txt
+          ${{ env.PYTHON }} -c "import os; os.add_dll_directory(r'${{ env.VCPKG_DIR }}\bin'); import gi; gi.require_version('Gtk', '3.0'); from gi.repository import Gio, GioWin32, GLibWin32, Gtk; assert hasattr(GLibWin32, 'get_command_line'); assert hasattr(GioWin32.InputStream, 'get_handle'); assert hasattr(GioWin32.OutputStream, 'get_handle')" 2>"%GI_WARNING_LOG%"
+          if errorlevel 1 (
+            type "%GI_WARNING_LOG%"
+            exit /b 1
+          )
+          type "%GI_WARNING_LOG%"
+          findstr /C:"Unable to load platform-specific GIO introspection data" /C:"Name conflict for platform-specific symbol" "%GI_WARNING_LOG%" >nul && (
+            echo Platform-specific typelib regression detected.
+            exit /b 1
+          )
 
       - name: Upload wheel
         uses: actions/upload-artifact@v4
