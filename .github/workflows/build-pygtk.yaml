@@ -68,6 +68,11 @@ jobs:
           ./vcpkg install gtk3[introspection]:x86-windows --binarysource=$binarySource
           if ($LASTEXITCODE -ne 0) { throw "vcpkg install gtk3 failed" }
 
+      - name: Generate platform-specific typelibs
+        shell: bash
+        run: |
+          ./generate-platform-typelibs.sh vcpkg/installed/${{ env.VCPKG_TRIPLET }}
+
       - name: Validate build
         shell: bash
         run: |
