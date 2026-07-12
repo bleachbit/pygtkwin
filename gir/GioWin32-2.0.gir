@@ -1,7 +1,5 @@
 <?xml version="1.0"?>
-<!-- Hand-written GIR for the GioWin32 namespace.
-  Generated to match glib 2.88.0 gio/gwin32inputstream.h,
-  gio/gwin32outputstream.h, and gio/gregistrysettingsbackend.h API.
+<!-- GLib 2.88 GioWin32 API metadata.
   The shared-library attribute uses the vcpkg/MSVC DLL naming convention
   (gio-2.0-0.dll) rather than the MinGW convention (libgio-2.0-0.dll). -->
 <repository version="1.2"
@@ -16,6 +14,7 @@
   <package name="gio-windows-2.0"/>
   <c:include name="gio/gio.h"/>
   <c:include name="gio/gwin32inputstream.h"/>
+  <c:include name="gio/gwin32networkmonitor.h"/>
   <c:include name="gio/gwin32outputstream.h"/>
   <c:include name="gio/gregistrysettingsbackend.h"/>
   <namespace name="GioWin32" version="2.0"
@@ -71,6 +70,46 @@
         </parameter>
       </parameters>
     </function-macro>
+    <function-macro name="IS_WIN32_NETWORK_MONITOR" c:identifier="G_IS_WIN32_NETWORK_MONITOR" introspectable="0">
+      <parameters>
+        <parameter name="o"/>
+      </parameters>
+    </function-macro>
+    <function-macro name="IS_WIN32_NETWORK_MONITOR_CLASS" c:identifier="G_IS_WIN32_NETWORK_MONITOR_CLASS" introspectable="0">
+      <parameters>
+        <parameter name="k"/>
+      </parameters>
+    </function-macro>
+    <function-macro name="NETWORK_MONITOR" c:identifier="G_WIN32_NETWORK_MONITOR" introspectable="0">
+      <parameters>
+        <parameter name="o"/>
+      </parameters>
+    </function-macro>
+    <function-macro name="NETWORK_MONITOR_CLASS" c:identifier="G_WIN32_NETWORK_MONITOR_CLASS" introspectable="0">
+      <parameters>
+        <parameter name="k"/>
+      </parameters>
+    </function-macro>
+    <function-macro name="NETWORK_MONITOR_GET_CLASS" c:identifier="G_WIN32_NETWORK_MONITOR_GET_CLASS" introspectable="0">
+      <parameters>
+        <parameter name="o"/>
+      </parameters>
+    </function-macro>
+    <function-macro name="OUTPUT_STREAM" c:identifier="G_WIN32_OUTPUT_STREAM" introspectable="0">
+      <parameters>
+        <parameter name="o"/>
+      </parameters>
+    </function-macro>
+    <function-macro name="OUTPUT_STREAM_CLASS" c:identifier="G_WIN32_OUTPUT_STREAM_CLASS" introspectable="0">
+      <parameters>
+        <parameter name="k"/>
+      </parameters>
+    </function-macro>
+    <function-macro name="OUTPUT_STREAM_GET_CLASS" c:identifier="G_WIN32_OUTPUT_STREAM_GET_CLASS" introspectable="0">
+      <parameters>
+        <parameter name="o"/>
+      </parameters>
+    </function-macro>
     <class name="InputStream"
            c:symbol-prefix="input_stream"
            c:type="GWin32InputStream"
@@ -107,7 +146,7 @@ as used in the Windows C libraries.</doc>
           </parameter>
         </parameters>
       </constructor>
-      <function name="get_close_handle" c:identifier="g_win32_input_stream_get_close_handle" version="2.26">
+      <method name="get_close_handle" c:identifier="g_win32_input_stream_get_close_handle" glib:get-property="close-handle" version="2.26">
         <doc xml:space="preserve">Returns whether the handle of @stream will be
 closed when the stream is closed.</doc>
         <return-value transfer-ownership="none">
@@ -115,47 +154,47 @@ closed when the stream is closed.</doc>
           <type name="gboolean" c:type="gboolean"/>
         </return-value>
         <parameters>
-          <parameter name="stream" transfer-ownership="none">
+          <instance-parameter name="stream" transfer-ownership="none">
             <doc xml:space="preserve">a #GWin32InputStream</doc>
             <type name="InputStream" c:type="GWin32InputStream*"/>
-          </parameter>
+          </instance-parameter>
         </parameters>
-      </function>
-      <function name="get_handle" c:identifier="g_win32_input_stream_get_handle" version="2.26">
+      </method>
+      <method name="get_handle" c:identifier="g_win32_input_stream_get_handle" glib:get-property="handle" version="2.26">
         <doc xml:space="preserve">Return the Windows file handle that the stream reads from.</doc>
         <return-value transfer-ownership="none" nullable="1">
           <doc xml:space="preserve">The file handle of @stream</doc>
           <type name="gpointer" c:type="void*"/>
         </return-value>
         <parameters>
-          <parameter name="stream" transfer-ownership="none">
+          <instance-parameter name="stream" transfer-ownership="none">
             <doc xml:space="preserve">a #GWin32InputStream</doc>
             <type name="InputStream" c:type="GWin32InputStream*"/>
-          </parameter>
+          </instance-parameter>
         </parameters>
-      </function>
-      <function name="set_close_handle" c:identifier="g_win32_input_stream_set_close_handle" version="2.26">
+      </method>
+      <method name="set_close_handle" c:identifier="g_win32_input_stream_set_close_handle" glib:set-property="close-handle" version="2.26">
         <doc xml:space="preserve">Sets whether the handle of @stream shall be closed
 when the stream is closed.</doc>
         <return-value transfer-ownership="none">
           <type name="none" c:type="void"/>
         </return-value>
         <parameters>
-          <parameter name="stream" transfer-ownership="none">
+          <instance-parameter name="stream" transfer-ownership="none">
             <doc xml:space="preserve">a #GWin32InputStream</doc>
             <type name="InputStream" c:type="GWin32InputStream*"/>
-          </parameter>
+          </instance-parameter>
           <parameter name="close_handle" transfer-ownership="none">
             <doc xml:space="preserve">%TRUE to close the handle when done</doc>
             <type name="gboolean" c:type="gboolean"/>
           </parameter>
         </parameters>
-      </function>
-      <property name="close-handle" version="2.26" writable="1" transfer-ownership="none" default-value="TRUE">
+      </method>
+      <property name="close-handle" version="2.26" writable="1" transfer-ownership="none" setter="set_close_handle" getter="get_close_handle" default-value="TRUE">
         <doc xml:space="preserve">Whether to close the file handle when the stream is closed.</doc>
         <type name="gboolean" c:type="gboolean"/>
       </property>
-      <property name="handle" version="2.26" writable="1" construct-only="1" transfer-ownership="none">
+      <property name="handle" version="2.26" writable="1" construct-only="1" transfer-ownership="none" getter="get_handle">
         <doc xml:space="preserve">The handle that the stream reads from.</doc>
         <type name="gpointer" c:type="gpointer"/>
       </property>
@@ -207,6 +246,20 @@ when the stream is closed.</doc>
       </field>
     </record>
     <record name="InputStreamPrivate" c:type="GWin32InputStreamPrivate" disguised="1" opaque="1"/>
+    <record name="NetworkMonitor" c:type="GWin32NetworkMonitor">
+      <field name="parent_instance" introspectable="0" writable="1">
+        <type c:type="GNetworkMonitorBase"/>
+      </field>
+      <field name="priv" writable="1">
+        <type name="NetworkMonitorPrivate" c:type="GWin32NetworkMonitorPrivate*"/>
+      </field>
+    </record>
+    <record name="NetworkMonitorClass" c:type="GWin32NetworkMonitorClass">
+      <field name="parent_class" introspectable="0" writable="1">
+        <type c:type="GNetworkMonitorBaseClass"/>
+      </field>
+    </record>
+    <record name="NetworkMonitorPrivate" c:type="GWin32NetworkMonitorPrivate" disguised="1" opaque="1"/>
     <class name="OutputStream"
            c:symbol-prefix="output_stream"
            c:type="GWin32OutputStream"
@@ -220,7 +273,7 @@ Windows file handle.
 Note that `&lt;gio/gwin32outputstream.h&gt;` belongs to the Windows-specific GIO
 interfaces, thus you have to use the `gio-windows-2.0.pc` pkg-config file
 when using it.</doc>
-      <constructor name="new" c:identifier="g_win32_output_stream_new">
+      <constructor name="new" c:identifier="g_win32_output_stream_new" version="2.26">
         <doc xml:space="preserve">Creates a new #GWin32OutputStream for the given @handle.
 
 If @close_handle is %TRUE, the handle will be closed
@@ -243,7 +296,7 @@ as used in the Windows C libraries.</doc>
           </parameter>
         </parameters>
       </constructor>
-      <function name="get_close_handle" c:identifier="g_win32_output_stream_get_close_handle" version="2.26">
+      <method name="get_close_handle" c:identifier="g_win32_output_stream_get_close_handle" glib:get-property="close-handle" version="2.26">
         <doc xml:space="preserve">Returns whether the handle of @stream will be
 closed when the stream is closed.</doc>
         <return-value transfer-ownership="none">
@@ -251,47 +304,47 @@ closed when the stream is closed.</doc>
           <type name="gboolean" c:type="gboolean"/>
         </return-value>
         <parameters>
-          <parameter name="stream" transfer-ownership="none">
+          <instance-parameter name="stream" transfer-ownership="none">
             <doc xml:space="preserve">a #GWin32OutputStream</doc>
             <type name="OutputStream" c:type="GWin32OutputStream*"/>
-          </parameter>
+          </instance-parameter>
         </parameters>
-      </function>
-      <function name="get_handle" c:identifier="g_win32_output_stream_get_handle" version="2.26">
+      </method>
+      <method name="get_handle" c:identifier="g_win32_output_stream_get_handle" glib:get-property="handle" version="2.26">
         <doc xml:space="preserve">Return the Windows file handle that the stream writes to.</doc>
         <return-value transfer-ownership="none" nullable="1">
           <doc xml:space="preserve">The file handle of @stream</doc>
           <type name="gpointer" c:type="void*"/>
         </return-value>
         <parameters>
-          <parameter name="stream" transfer-ownership="none">
+          <instance-parameter name="stream" transfer-ownership="none">
             <doc xml:space="preserve">a #GWin32OutputStream</doc>
             <type name="OutputStream" c:type="GWin32OutputStream*"/>
-          </parameter>
+          </instance-parameter>
         </parameters>
-      </function>
-      <function name="set_close_handle" c:identifier="g_win32_output_stream_set_close_handle" version="2.26">
+      </method>
+      <method name="set_close_handle" c:identifier="g_win32_output_stream_set_close_handle" glib:set-property="close-handle" version="2.26">
         <doc xml:space="preserve">Sets whether the handle of @stream shall be closed
 when the stream is closed.</doc>
         <return-value transfer-ownership="none">
           <type name="none" c:type="void"/>
         </return-value>
         <parameters>
-          <parameter name="stream" transfer-ownership="none">
+          <instance-parameter name="stream" transfer-ownership="none">
             <doc xml:space="preserve">a #GWin32OutputStream</doc>
             <type name="OutputStream" c:type="GWin32OutputStream*"/>
-          </parameter>
+          </instance-parameter>
           <parameter name="close_handle" transfer-ownership="none">
             <doc xml:space="preserve">%TRUE to close the handle when done</doc>
             <type name="gboolean" c:type="gboolean"/>
           </parameter>
         </parameters>
-      </function>
-      <property name="close-handle" version="2.26" writable="1" transfer-ownership="none" default-value="TRUE">
+      </method>
+      <property name="close-handle" version="2.26" writable="1" transfer-ownership="none" setter="set_close_handle" getter="get_close_handle" default-value="TRUE">
         <doc xml:space="preserve">Whether to close the file handle when the stream is closed.</doc>
         <type name="gboolean" c:type="gboolean"/>
       </property>
-      <property name="handle" version="2.26" writable="1" construct-only="1" transfer-ownership="none">
+      <property name="handle" version="2.26" writable="1" construct-only="1" transfer-ownership="none" getter="get_handle">
         <doc xml:space="preserve">The handle that the stream writes to.</doc>
         <type name="gpointer" c:type="gpointer"/>
       </property>
@@ -350,7 +403,7 @@ when the stream is closed.</doc>
         <type name="Gio.SettingsBackend" c:type="GSettingsBackend*"/>
       </return-value>
       <parameters>
-        <parameter name="registry_key" transfer-ownership="none">
+        <parameter name="registry_key" transfer-ownership="none" nullable="1" allow-none="1">
           <doc xml:space="preserve">the registry key to use</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>

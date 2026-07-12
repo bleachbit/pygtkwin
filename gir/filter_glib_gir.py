@@ -1,58 +1,20 @@
 #!/usr/bin/env python3
-"""Remove GLibWin32-specific symbols from GLib-2.0.gir to avoid
-PyGObject "Name conflict for platform-specific symbol" warnings.
+"""Remove platform-specific duplicate symbols from a base GIR.
 
-The gobject-introspection port generates GLib-2.0.gir by scanning ALL
-installed glib headers, including gwin32.h.  This means GLib-2.0.gir
-contains g_win32_* functions and the GWin32OSType enum that also appear
-in our hand-written GLibWin32-2.0.gir.  When both typelibs are loaded,
-PyGObject 3.56.3 emits "Name conflict" PyGIWarning messages for each
-duplicate symbol (see pygobject bug #760).
+The gobject-introspection port can generate GLib-2.0.gir and Gio-2.0.gir by
+scanning all installed headers, including platform-specific headers.  GLib
+2.88 generates dedicated GLibWin32-2.0 and GioWin32-2.0 GIRs instead.  When
+both namespaces contain the same symbol, PyGObject emits a platform-specific
+symbol name-conflict warning.
 
-In a normal glib 2.88.0 build with introspection=enabled, glib's own
-meson build removes these symbols from GLib-2.0.gir (MR !4881).  We
-replicate that by filtering them out post-build.
-
-Symbols to remove (defined in glib/gwin32.h):
-  - Functions with c:identifier starting with "g_win32_" EXCEPT:
-    - g_io_channel_win32_* (defined in giochannel.h, stays in GLib)
-    - g_win32_get_system_data_dirs_for_module (defined in gutils.h, stays in GLib)
-  - The GWin32OSType enumeration (c:type="GWin32OSType")
-  - Function macros G_WIN32_HAVE_WIDECHAR_API, G_WIN32_IS_NT_BASED,
-    G_WIN32_DLLMAIN_FOR_DLL_NAME
-
-Usage: python3 filter_glib_gir.py <GLib-2.0.gir> [output.gir]
+Usage: python3 filter_glib_gir.py <base.gir> <platform.gir> [output.gir]
 """
 
 import sys
 import xml.etree.ElementTree as ET
 
-# Symbols to remove from GLib-2.0.gir (defined in gwin32.h, now in GLibWin32-2.0.gir)
-WIN32_C_IDENTIFIERS = {
-    'g_win32_ftruncate',
-    'g_win32_getlocale',
-    'g_win32_error_message',
-    'g_win32_get_package_installation_directory',
-    'g_win32_get_package_installation_subdirectory',
-    'g_win32_get_package_installation_directory_of_module',
-    'g_win32_get_windows_version',
-    'g_win32_locale_filename_from_utf8',
-    'g_win32_get_command_line',
-    'g_win32_check_windows_version',
-}
-
-WIN32_MACRO_C_IDENTIFIERS = {
-    'G_WIN32_HAVE_WIDECHAR_API',
-    'G_WIN32_IS_NT_BASED',
-    'G_WIN32_DLLMAIN_FOR_DLL_NAME',
-}
-
-# Namespace URIs used in GIR files
-NS = {
-    '': 'http://www.gtk.org/introspection/core/1.0',
-    'c': 'http://www.gtk.org/introspection/c/1.0',
-    'glib': 'http://www.gtk.org/introspection/glib/1.0',
-}
+C_IDENTIFIER = '{http://www.gtk.org/introspection/c/1.0}identifier'
+C_TYPE = '{http://www.gtk.org/introspection/c/1.0}type'
 
 
 def localname(tag):
@@ -60,54 +22,53 @@ def localname(tag):
     return tag.split('}')[-1] if '}' in tag else tag
 
 
-def should_remove(elem):
-    """Check if an element should be removed from GLib-2.0.gir."""
-    name = localname(elem.tag)
-
-    if name == 'function':
-        cid = elem.get('{http://www.gtk.org/introspection/c/1.0}identifier', '')
-        if cid in WIN32_C_IDENTIFIERS:
-            return True
-
-    if name == 'function-macro':
-        cid = elem.get('{http://www.gtk.org/introspection/c/1.0}identifier', '')
-        if cid in WIN32_MACRO_C_IDENTIFIERS:
-            return True
-
-    if name == 'enumeration':
-        ctype = elem.get('{http://www.gtk.org/introspection/c/1.0}type', '')
-        if ctype == 'GWin32OSType':
-            return True
-
-    return False
+def namespace(root):
+    """Return the first namespace element from a GIR repository."""
+    for element in root:
+        if localname(element.tag) == 'namespace':
+            return element
+    raise ValueError('GIR repository does not contain a namespace')
 
 
-def filter_gir(input_path, output_path):
-    """Filter win32 symbols from a GLib-2.0.gir file."""
-    tree = ET.parse(input_path)
-    root = tree.getroot()
+def platform_symbols(platform_namespace):
+    """Return C identifiers and types defined by a platform namespace."""
+    return {
+        attribute: {
+            element.get(attribute)
+            for element in platform_namespace
+            if element.get(attribute)
+        }
+        for attribute in (C_IDENTIFIER, C_TYPE)
+    }
+
+
+def is_platform_symbol(element, symbols):
+    """Return whether a top-level GIR element duplicates a platform symbol."""
+    return any(element.get(attribute) in values for attribute, values in symbols.items())
+
+
+def filter_gir(base_path, platform_path, output_path):
+    """Filter platform duplicates from a base GIR using a platform GIR."""
+    base_tree = ET.parse(base_path)
+    platform_tree = ET.parse(platform_path)
+    base_namespace = namespace(base_tree.getroot())
+    symbols = platform_symbols(namespace(platform_tree.getroot()))
 
     removed = 0
-    for ns_elem in root:
-        if localname(ns_elem.tag) != 'namespace':
-            continue
-        to_remove = []
-        for child in list(ns_elem):
-            if should_remove(child):
-                to_remove.append(child)
-        for elem in to_remove:
-            ns_elem.remove(elem)
+    for element in list(base_namespace):
+        if is_platform_symbol(element, symbols):
+            base_namespace.remove(element)
             removed += 1
 
-    tree.write(output_path, encoding='utf-8', xml_declaration=True)
-    print(f"Removed {removed} win32 element(s) from {input_path} -> {output_path}")
+    base_tree.write(output_path, encoding='utf-8', xml_declaration=True)
+    print(f'Removed {removed} platform element(s) from {base_path} -> {output_path}')
     return removed
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} <GLib-2.0.gir> [output.gir]", file=sys.stderr)
+    if len(sys.argv) not in (3, 4):
+        print(f'Usage: {sys.argv[0]} <base.gir> <platform.gir> [output.gir]', file=sys.stderr)
         sys.exit(1)
-    inp = sys.argv[1]
-    outp = sys.argv[2] if len(sys.argv) > 2 else inp
-    filter_gir(inp, outp)
+    base, platform = sys.argv[1:3]
+    output = sys.argv[3] if len(sys.argv) == 4 else base
+    filter_gir(base, platform, output)

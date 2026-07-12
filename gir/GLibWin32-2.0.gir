@@ -1,9 +1,8 @@
 <?xml version="1.0"?>
-<!-- Hand-written GIR for the GLibWin32 namespace.
-  Generated to match glib 2.88.0 glib/gwin32.h API.
+<!-- GLib 2.88 GLibWin32 API metadata.
   The shared-library attribute uses the vcpkg/MSVC DLL naming convention
   (glib-2.0-0.dll, gobject-2.0-0.dll) rather than the MinGW convention
-  (libglib-2.0-0.dll). -->
+  (libglib-2.0-0.dll, libgobject-2.0-0.dll). -->
 <repository version="1.2"
             xmlns="http://www.gtk.org/introspection/core/1.0"
             xmlns:c="http://www.gtk.org/introspection/c/1.0"
@@ -18,6 +17,11 @@
              c:symbol-prefixes="glib,g_win32,g">
     <function-macro name="HAVE_WIDECHAR_API" c:identifier="G_WIN32_HAVE_WIDECHAR_API" introspectable="0"/>
     <function-macro name="IS_NT_BASED" c:identifier="G_WIN32_IS_NT_BASED" introspectable="0"/>
+    <function-macro name="clear_com" c:identifier="g_win32_clear_com" version="2.84" introspectable="0">
+      <parameters>
+        <parameter name="com_obj"/>
+      </parameters>
+    </function-macro>
     <enumeration name="OSType" c:type="GWin32OSType">
       <doc xml:space="preserve">Type of Windows edition to check for at run-time.</doc>
       <member name="any" value="0" c:identifier="G_WIN32_OS_ANY">
@@ -89,15 +93,15 @@ with Win32.  Emulates ftruncate() on Windows.</doc>
         </parameter>
       </parameters>
     </function>
-    <function name="get_command_line" c:identifier="g_win32_get_command_line" version="2.40" introspectable="0">
+    <function name="get_command_line" c:identifier="g_win32_get_command_line" version="2.40">
       <doc xml:space="preserve">Returns a string vector of the command line arguments, in UTF-8.</doc>
-      <return-value>
+      <return-value transfer-ownership="full">
         <array c:type="gchar**">
           <type name="utf8"/>
         </array>
       </return-value>
     </function>
-    <function name="get_package_installation_directory" c:identifier="g_win32_get_package_installation_directory" deprecated="1" deprecated-version="2.36">
+    <function name="get_package_installation_directory" c:identifier="g_win32_get_package_installation_directory" deprecated="1" deprecated-version="2.18">
       <doc xml:space="preserve">Returns the installation directory for @package, or NULL.</doc>
       <return-value transfer-ownership="full" nullable="1">
         <type name="utf8" c:type="gchar*"/>
@@ -122,7 +126,7 @@ with Win32.  Emulates ftruncate() on Windows.</doc>
         </parameter>
       </parameters>
     </function>
-    <function name="get_package_installation_subdirectory" c:identifier="g_win32_get_package_installation_subdirectory" deprecated="1" deprecated-version="2.36">
+    <function name="get_package_installation_subdirectory" c:identifier="g_win32_get_package_installation_subdirectory" deprecated="1" deprecated-version="2.18">
       <doc xml:space="preserve">Returns a newly-allocated string containing the path of the
 subdirectory @subdir under the installation directory for @package.</doc>
       <return-value transfer-ownership="full">
@@ -152,7 +156,7 @@ subdirectory @subdir under the installation directory for @package.</doc>
         <type name="utf8" c:type="gchar*"/>
       </return-value>
     </function>
-    <function name="locale_filename_from_utf8" c:identifier="g_win32_locale_filename_from_utf8">
+    <function name="locale_filename_from_utf8" c:identifier="g_win32_locale_filename_from_utf8" version="2.8">
       <doc xml:space="preserve">Converts a filename from UTF-8 to the system codepage.</doc>
       <return-value transfer-ownership="full">
         <type name="utf8" c:type="gchar*"/>
