@@ -6,12 +6,12 @@
    vs_module_defs: librsvg_defs,
 -  soversion: ver_split[0]
  )
-
+ 
  librsvg_ld_args = []
 @@ -204,6 +203,22 @@
    libraries_private: private_dependencies,
  )
-
+ 
 +gdk_pixbuf_moduledir = gdk_pixbuf_dep.get_variable(pkgconfig: 'gdk_pixbuf_moduledir')
 +
 +shared_module('pixbufloader-svg',
