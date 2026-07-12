@@ -46,6 +46,7 @@ jobs:
       - name: vcpkg build
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           git clone https://github.com/microsoft/vcpkg.git ./vcpkg
           cd ./vcpkg
           git checkout ${{ env.VCPKG_COMMIT }}
@@ -56,9 +57,16 @@ jobs:
           $cacheDir = Join-Path $env:LOCALAPPDATA 'vcpkg\archives'
           New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
           $binarySource = "clear;files,$cacheDir,readwrite"
+          ./vcpkg install python3:x86-windows --binarysource=$binarySource
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg install python3 failed" }
+          python -m ensurepip --upgrade
+          python -m pip install virtualenv
           ./vcpkg install gobject-introspection:x86-windows --binarysource=$binarySource
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg install gobject-introspection failed" }
           ./vcpkg install harfbuzz[introspection]:x86-windows pango[introspection]:x86-windows gdk-pixbuf[introspection]:x86-windows atk[introspection]:x86-windows libcroco:x86-windows librsvg:x86-windows --binarysource=$binarySource
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg install harfbuzz/pango/gdk-pixbuf/atk/libcroco/librsvg failed" }
           ./vcpkg install gtk3[introspection]:x86-windows --binarysource=$binarySource
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg install gtk3 failed" }
 
       - name: Prepare for packing
         shell: bash
