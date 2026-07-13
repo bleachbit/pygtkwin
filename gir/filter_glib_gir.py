@@ -13,6 +13,20 @@ Usage: python3 filter_glib_gir.py <base.gir> <platform.gir> [output.gir]
 import sys
 import xml.etree.ElementTree as ET
 
+# GIR namespace URIs and their conventional prefixes.  ElementTree otherwise
+# rewrites prefixes as ns0:/ns1: on write, which g-ir-compiler rejects with
+# "element ns0:repository from state 1 is unknown" / "Expected namespace
+# element in the gir file".  Registering the default (core) namespace with an
+# empty prefix keeps <repository> and <namespace> unprefixed as required.
+_GIR_NAMESPACES = {
+    'http://www.gtk.org/introspection/core/1.0': '',
+    'http://www.gtk.org/introspection/c/1.0': 'c',
+    'http://www.gtk.org/introspection/doc/1.0': 'doc',
+    'http://www.gtk.org/introspection/glib/1.0': 'glib',
+}
+for _uri, _prefix in _GIR_NAMESPACES.items():
+    ET.register_namespace(_prefix, _uri)
+
 C_IDENTIFIER = '{http://www.gtk.org/introspection/c/1.0}identifier'
 C_TYPE = '{http://www.gtk.org/introspection/c/1.0}type'
 

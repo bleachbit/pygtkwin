@@ -51,6 +51,46 @@ class FilterGirTest(unittest.TestCase):
             }
             self.assertEqual(identifiers, {'G_WIN32_DLLMAIN_FOR_DLL_NAME', 'g_base'})
 
+    def test_output_preserves_gir_namespace_prefixes(self):
+        # g-ir-compiler rejects GIR files whose namespace prefixes have been
+        # rewritten to ns0:/ns1: by ElementTree (it reports "element
+        # ns0:repository from state 1 is unknown" / "Expected namespace
+        # element in the gir file").  The raw output text must keep the
+        # default namespace unprefixed and retain the c: prefix.
+        base = '''<?xml version="1.0"?>
+<repository xmlns="http://www.gtk.org/introspection/core/1.0"
+            xmlns:c="http://www.gtk.org/introspection/c/1.0">
+  <namespace name="GLib" version="2.0">
+    <function name="dup" c:identifier="g_win32_dup"/>
+    <function name="base" c:identifier="g_base"/>
+  </namespace>
+</repository>
+'''
+        platform = '''<?xml version="1.0"?>
+<repository xmlns="http://www.gtk.org/introspection/core/1.0"
+            xmlns:c="http://www.gtk.org/introspection/c/1.0">
+  <namespace name="GLibWin32" version="2.0">
+    <function name="dup" c:identifier="g_win32_dup"/>
+  </namespace>
+</repository>
+'''
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            base_path = directory / 'GLib-2.0.gir'
+            platform_path = directory / 'GLibWin32-2.0.gir'
+            output_path = directory / 'GLib-2.0.filtered.gir'
+            base_path.write_text(base)
+            platform_path.write_text(platform)
+
+            self.assertEqual(FILTER.filter_gir(base_path, platform_path, output_path), 1)
+
+            text = output_path.read_text()
+            self.assertNotIn('ns0:', text)
+            self.assertNotIn('ns1:', text)
+            self.assertIn('<repository', text)
+            self.assertIn('<namespace', text)
+            self.assertIn('c:identifier', text)
+
     def test_platform_girs_expose_glib_288_win32_api(self):
         glib = ET.parse(MODULE_PATH.with_name('GLibWin32-2.0.gir'))
         gio = ET.parse(MODULE_PATH.with_name('GioWin32-2.0.gir'))
