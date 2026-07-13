@@ -203,7 +203,7 @@ jobs:
           ${{ env.PYTHON }} show_versions.py --dll-directory=${{ env.VCPKG_DIR }}\bin
 
           set GI_WARNING_LOG=%TEMP%\pygobject-platform-gir-stderr.txt
-          ${{ env.PYTHON }} -c "import gi; gi.require_version('Gtk', '3.0'); from gi.repository import Gio, GioWin32, GLibWin32, Gtk; assert hasattr(GLibWin32, 'get_command_line'); assert hasattr(GioWin32.InputStream, 'get_handle'); assert hasattr(GioWin32.OutputStream, 'get_handle')" 2>"%GI_WARNING_LOG%"
+          ${{ env.PYTHON }} -c "import os; os.add_dll_directory(r'${{ env.VCPKG_DIR }}\bin'); import gi; gi.require_version('Gtk', '3.0'); from gi.repository import Gio, GioWin32, GLibWin32, Gtk; assert hasattr(GLibWin32, 'get_command_line'); assert hasattr(GioWin32.InputStream, 'get_handle'); assert hasattr(GioWin32.OutputStream, 'get_handle')" 2>"%GI_WARNING_LOG%"
           if errorlevel 1 (
             type "%GI_WARNING_LOG%"
             exit /b 1
