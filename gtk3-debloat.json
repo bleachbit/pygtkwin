@@ -12,7 +12,52 @@
         "gtkcalendar.c",
         "gtkfontbutton.c",
         "gtkfontchooserdialog.c",
-        "gtkcolorchooserdialog.c"
+        "gtkcolorchooserdialog.c",
+        "gtkcolorchooserwidget.c",
+        "gtkcoloreditor.c",
+        "gtkcolorplane.c",
+        "gtkcolorswatch.c",
+        "gtkcolorpicker.c",
+        "gtkcolorpickerkwin.c",
+        "gtkcolorpickerportal.c",
+        "gtkcolorpickershell.c",
+        "gtkfontchooserwidget.c",
+        "gtkfontchooser.c",
+        "gtkfontchooserutils.c",
+        "gtkassistant.c",
+        "gtkactionbar.c",
+        "gtkappchooserbutton.c",
+        "gtkappchooserwidget.c",
+        "gtkappchooserdialog.c",
+        "gtkappchooser.c",
+        "gtkemojichooser.c",
+        "gtkemojicompletion.c",
+        "gtkglarea.c",
+        "gtkiconview.c",
+        "gtkflowbox.c",
+        "gtklevelbar.c",
+        "gtkswitch.c",
+        "gtkscalebutton.c",
+        "gtklayout.c",
+        "gtkfixed.c",
+        "gtkaspectframe.c",
+        "gtkpadcontroller.c",
+        "gtkcellrendereraccel.c",
+        "gtkcellrenderercombo.c",
+        "gtkcellrendererprogress.c",
+        "gtkcellrendererspin.c",
+        "gtkcellrendererspinner.c",
+        "gtkrecentchooserdefault.c",
+        "gtkrecentchooserwidget.c",
+        "gtkrecentchoosermenu.c",
+        "gtkrecentchooser.c",
+        "gtkrecentchooserutils.c",
+        "gtkrecentfilter.c",
+        "gtkrecentchooserdialog.c",
+        "gtkoffscreenwindow.c",
+        "gtkoverlay.c",
+        "gtkexpander.c",
+        "gtkgladecatalog.c"
       ],
       "headers": [
         "gtklockbutton.h",
@@ -21,25 +66,83 @@
         "gtkcalendar.h",
         "gtkcolorchooserdialog.h",
         "gtkfontbutton.h",
-        "gtkfontchooserdialog.h"
+        "gtkfontchooserdialog.h",
+        "gtkcolorchooserwidget.h",
+        "gtkcoloreditor.h",
+        "gtkfontchooserwidget.h",
+        "gtkfontchooser.h",
+        "gtkassistant.h",
+        "gtkactionbar.h",
+        "gtkappchooserbutton.h",
+        "gtkappchooserwidget.h",
+        "gtkappchooserdialog.h",
+        "gtkappchooser.h",
+        "gtkemojichooser.h",
+        "gtkemojicompletion.h",
+        "gtkglarea.h",
+        "gtkiconview.h",
+        "gtkflowbox.h",
+        "gtklevelbar.h",
+        "gtkswitch.h",
+        "gtkscalebutton.h",
+        "gtklayout.h",
+        "gtkfixed.h",
+        "gtkaspectframe.h",
+        "gtkpadcontroller.h",
+        "gtkcellrendereraccel.h",
+        "gtkcellrenderercombo.h",
+        "gtkcellrendererprogress.h",
+        "gtkcellrendererspin.h",
+        "gtkcellrendererspinner.h",
+        "gtkrecentchooserwidget.h",
+        "gtkrecentchoosermenu.h",
+        "gtkrecentchooser.h",
+        "gtkrecentfilter.h",
+        "gtkrecentchooserdialog.h",
+        "gtkoffscreenwindow.h",
+        "gtkoverlay.h",
+        "gtkexpander.h"
       ],
       "a11y_sources": [
-        "gtklockbuttonaccessible.c"
+        "gtklockbuttonaccessible.c",
+        "gtkcolorswatchaccessible.c",
+        "gtkflowboxaccessible.c",
+        "gtkflowboxchildaccessible.c",
+        "gtkiconviewaccessible.c",
+        "gtklevelbaraccessible.c",
+        "gtkscalebuttonaccessible.c",
+        "gtkswitchaccessible.c",
+        "gtkexpanderaccessible.c"
       ],
       "a11y_headers": [
         "gtklockbuttonaccessible.h",
-        "gtklockbuttonaccessibleprivate.h"
+        "gtklockbuttonaccessibleprivate.h",
+        "gtkcolorswatchaccessible.h",
+        "gtkcolorswatchaccessibleprivate.h",
+        "gtkflowboxaccessible.h",
+        "gtkflowboxaccessibleprivate.h",
+        "gtkflowboxchildaccessible.h",
+        "gtkflowboxchildaccessibleprivate.h",
+        "gtkiconviewaccessible.h",
+        "gtkiconviewaccessibleprivate.h",
+        "gtklevelbaraccessible.h",
+        "gtkscalebuttonaccessible.h",
+        "gtkswitchaccessible.h",
+        "gtkexpanderaccessible.h"
+      ],
+      "deprecated_sources": [
+        "gtkrecentaction.c"
+      ],
+      "deprecated_headers": [
+        "gtkrecentaction.h"
       ]
     }
   ],
 
   "stub_callers": [
     {
-      "_comment": "Emoji chooser/completion has callers in gtkentry.c and gtktextview.c. Stub the caller functions to early-return, replace the completion call with NULL, remove includes, then remove the emoji .c files.",
-      "sources_to_remove": [
-        "gtkemojichooser.c",
-        "gtkemojicompletion.c"
-      ],
+      "_comment": "Emoji chooser/completion has callers in gtkentry.c and gtktextview.c. Stub the caller functions to early-return, replace the completion call with NULL, remove includes. The emoji .c files are removed via remove_compilation_units.",
+      "sources_to_remove": [],
       "stubs": [
         {
           "file": "gtk/gtkentry.c",
@@ -69,6 +172,41 @@
           "headers": ["gtkemojichooser.h"]
         }
       ]
+    },
+    {
+      "_comment": "Remove stale includes from files that reference removed widgets but don't actually use their symbols.",
+      "sources_to_remove": [],
+      "remove_includes": [
+        {
+          "file": "gtk/gtkcontainer.c",
+          "headers": ["gtkassistant.h"]
+        }
+      ],
+      "replace_calls": [
+        {
+          "file": "gtk/gtkcontainer.c",
+          "old": "#define SPECIAL_CONTAINER(x) (GTK_IS_ASSISTANT (x) || \\\n                              GTK_IS_ACTION_BAR (x) || \\\n                              GTK_IS_POPOVER_MENU (x) || \\\n                              GTK_IS_SHORTCUTS_SECTION (x) || \\\n                              GTK_IS_SHORTCUTS_WINDOW (x))",
+          "new": "#define SPECIAL_CONTAINER(x) (GTK_IS_POPOVER_MENU (x) || \\\n                              GTK_IS_SHORTCUTS_SECTION (x) || \\\n                              GTK_IS_SHORTCUTS_WINDOW (x))"
+        }
+      ]
+    },
+    {
+      "_comment": "Inspector sources are removed from the build (remove_inspector_sources). gtk_window_set_debugging is stubbed via stub_inspector_debugging, but update_debugging() still calls gtk_inspector_window_rescan. Also, gtkoffscreenwindow.h is removed from gtk.h so GTK_IS_OFFSCREEN_WINDOW macro is undefined; remove the check in gtk_window_notify_startup.",
+      "sources_to_remove": [],
+      "stubs": [
+        {
+          "file": "gtk/gtkwindow.c",
+          "function": "update_debugging",
+          "replacement": "{ gtk_window_update_debugging_id = 0; return G_SOURCE_REMOVE; }"
+        }
+      ],
+      "replace_calls": [
+        {
+          "file": "gtk/gtkwindow.c",
+          "old": "  if (!disable_startup_notification &&\n      !GTK_IS_OFFSCREEN_WINDOW (window) &&\n      priv->type != GTK_WINDOW_POPUP)",
+          "new": "  if (!disable_startup_notification &&\n      priv->type != GTK_WINDOW_POPUP)"
+        }
+      ]
     }
   ],
 
@@ -92,7 +230,8 @@
       "gtkrecentchooserdefault.ui",
       "gtksearchbar.ui",
       "gtkvolumebutton.ui",
-      "gtkactionbar.ui"
+      "gtkactionbar.ui",
+      "gtkscalebutton.ui"
     ],
     "remove_themes": ["HighContrast"],
     "remove_inspector": true,
@@ -101,8 +240,11 @@
 
   "stub_inspector_debugging": true,
 
+  "remove_inspector_sources": true,
+
   "meson_options": {
     "_comment": "Added to vcpkg portfile.cmake meson configure step.",
-    "b_lto": true
+    "b_lto": true,
+    "print_backends": ""
   }
 }

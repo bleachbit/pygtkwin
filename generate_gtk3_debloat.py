@@ -233,6 +233,8 @@ def apply_debloat(gtk_dir, config):
         headers = unit.get("headers", [])
         a11y_sources = unit.get("a11y_sources", [])
         a11y_headers = unit.get("a11y_headers", [])
+        deprecated_sources = unit.get("deprecated_sources", [])
+        deprecated_headers = unit.get("deprecated_headers", [])
 
         # Remove .c from gtk/meson.build (gtk_sources list)
         remove_lines_matching(meson_build, sources)
@@ -248,6 +250,15 @@ def apply_debloat(gtk_dir, config):
         a11y_meson = os.path.join(gtk_subdir, "a11y", "meson.build")
         if os.path.exists(a11y_meson):
             remove_lines_matching(a11y_meson, a11y_sources + a11y_headers)
+
+        # Remove deprecated .c and .h from gtk/deprecated/meson.build
+        deprecated_meson = os.path.join(gtk_subdir, "deprecated", "meson.build")
+        if os.path.exists(deprecated_meson):
+            remove_lines_matching(deprecated_meson, deprecated_sources + deprecated_headers)
+
+        # Remove #include from gtk/gtk.h for deprecated headers
+        for h in deprecated_headers:
+            remove_line_from_file(gtk_h, f"#include <gtk/deprecated/{h}>")
 
     # --- Stub callers and remove sources ---
     for stub_config in config.get("stub_callers", []):
@@ -283,6 +294,14 @@ def apply_debloat(gtk_dir, config):
     if config.get("stub_inspector_debugging"):
         print("Stubbing inspector debugging...")
         apply_inspector_stub(gtk_dir)
+
+    # --- Remove inspector sources from the build ---
+    if config.get("remove_inspector_sources"):
+        print("Removing inspector sources from build...")
+        # Remove subdir('inspector') from gtk/meson.build
+        remove_line_from_file(meson_build, "subdir('inspector')")
+        # Remove inspector_sources from the gtk_sources += [...] list
+        remove_line_from_file(meson_build, "inspector_sources,")
 
 
 def generate_gtk_source_patch(gtk_dir):
@@ -329,10 +348,15 @@ def generate_vcpkg_portfile_patch(config, gtk_source_patch, work_dir):
 
     # Add meson options
     if "print_backends" in meson_options:
+        pb = meson_options['print_backends']
+        if pb:
+            comment = f"# Only build the file print backend (cups/lpr/papi are Unix-only)"
+        else:
+            comment = f"# Disable all print backend modules on Windows (file backend needs Unix-only sources; GtkPrintOperation win32 backend is separate and always compiled)"
         portfile_content = portfile_content.replace(
             "        -Dcolord=no                 # Build colord support for the CUPS printing backend",
             "        -Dcolord=no                 # Build colord support for the CUPS printing backend\n"
-            f"        -Dprint_backends={meson_options['print_backends']}       # Only build the file print backend (cups/lpr/papi are Unix-only)"
+            f"        -Dprint_backends={pb}       {comment}"
         )
 
     if meson_options.get("b_lto"):

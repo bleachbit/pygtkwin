@@ -1,14 +1,33 @@
 diff --git a/ports/gtk3/0003-debloat.patch b/ports/gtk3/0003-debloat.patch
 new file mode 100644
-index 0000000..5660a3d
+index 0000000..38cda60
 --- /dev/null
 +++ b/ports/gtk3/0003-debloat.patch
-@@ -0,0 +1,438 @@
+@@ -0,0 +1,888 @@
 +diff --git a/gtk/a11y/meson.build b/gtk/a11y/meson.build
-+index 8c615c8..44d5a32 100644
++index 8c615c8..b38d21c 100644
 +--- a/gtk/a11y/meson.build
 ++++ b/gtk/a11y/meson.build
-+@@ -27,7 +27,6 @@ a11y_sources = files(
++@@ -8,26 +8,19 @@ a11y_sources = files(
++   'gtkcellaccessible.c',
++   'gtkcellaccessibleparent.c',
++   'gtkcheckmenuitemaccessible.c',
++-  'gtkcolorswatchaccessible.c',
++   'gtkcomboboxaccessible.c',
++   'gtkcontaineraccessible.c',
++   'gtkcontainercellaccessible.c',
++   'gtkentryaccessible.c',
++-  'gtkexpanderaccessible.c',
++   'gtkfilechooserwidgetaccessible.c',
++-  'gtkflowboxaccessible.c',
++-  'gtkflowboxchildaccessible.c',
++   'gtkframeaccessible.c',
++   'gtkheaderbaraccessible.c',
++-  'gtkiconviewaccessible.c',
++   'gtkimageaccessible.c',
++   'gtkimagecellaccessible.c',
++   'gtklabelaccessible.c',
++-  'gtklevelbaraccessible.c',
 +   'gtklinkbuttonaccessible.c',
 +   'gtklistboxaccessible.c',
 +   'gtklistboxrowaccessible.c',
@@ -16,7 +35,36 @@ index 0000000..5660a3d
 +   'gtkmenuaccessible.c',
 +   'gtkmenubuttonaccessible.c',
 +   'gtkmenushellaccessible.c',
-+@@ -86,7 +85,6 @@ a11y_headers = files(
++@@ -43,14 +36,12 @@ a11y_sources = files(
++   'gtkrangeaccessible.c',
++   'gtkrenderercellaccessible.c',
++   'gtkscaleaccessible.c',
++-  'gtkscalebuttonaccessible.c',
++   'gtkscrolledwindowaccessible.c',
++   'gtksocketaccessible.c',
++   'gtkspinbuttonaccessible.c',
++   'gtkspinneraccessible.c',
++   'gtkstatusbaraccessible.c',
++   'gtkstackaccessible.c',
++-  'gtkswitchaccessible.c',
++   'gtktextcellaccessible.c',
++   'gtktextviewaccessible.c',
++   'gtktogglebuttonaccessible.c',
++@@ -72,21 +63,15 @@ a11y_headers = files(
++   'gtkcontaineraccessible.h',
++   'gtkcontainercellaccessible.h',
++   'gtkentryaccessible.h',
++-  'gtkexpanderaccessible.h',
++   'gtkfilechooserwidgetaccessible.h',
++-  'gtkflowboxaccessible.h',
++-  'gtkflowboxchildaccessible.h',
++   'gtkframeaccessible.h',
++   'gtkheaderbaraccessible.h',
++-  'gtkiconviewaccessible.h',
++   'gtkimageaccessible.h',
++   'gtkimagecellaccessible.h',
++   'gtklabelaccessible.h',
++-  'gtklevelbaraccessible.h',
 +   'gtklinkbuttonaccessible.h',
 +   'gtklistboxaccessible.h',
 +   'gtklistboxrowaccessible.h',
@@ -24,8 +72,43 @@ index 0000000..5660a3d
 +   'gtkmenuaccessible.h',
 +   'gtkmenubuttonaccessible.h',
 +   'gtkmenuitemaccessible.h',
++@@ -102,14 +87,12 @@ a11y_headers = files(
++   'gtkrangeaccessible.h',
++   'gtkrenderercellaccessible.h',
++   'gtkscaleaccessible.h',
++-  'gtkscalebuttonaccessible.h',
++   'gtkscrolledwindowaccessible.h',
++   'gtksocketaccessible.h',
++   'gtkspinbuttonaccessible.h',
++   'gtkspinneraccessible.h',
++   'gtkstatusbaraccessible.h',
++   'gtkstackaccessible.h',
++-  'gtkswitchaccessible.h',
++   'gtktextcellaccessible.h',
++   'gtktextviewaccessible.h',
++   'gtktogglebuttonaccessible.h',
++diff --git a/gtk/deprecated/meson.build b/gtk/deprecated/meson.build
++index 9dfd5f0..8548c04 100644
++--- a/gtk/deprecated/meson.build
+++++ b/gtk/deprecated/meson.build
++@@ -22,7 +22,6 @@ gtk_deprecated_sources = files(
++   'gtknumerableicon.c',
++   'gtkradioaction.c',
++   'gtkrc.c',
++-  'gtkrecentaction.c',
++   'gtkstatusicon.c',
++   'gtkstock.c',
++   'gtkstyle.c',
++@@ -65,7 +64,6 @@ gtk_deprecated_headers = files(
++   'gtknumerableicon.h',
++   'gtkradioaction.h',
++   'gtkrc.h',
++-  'gtkrecentaction.h',
++   'gtkstatusicon.h',
++   'gtkstock.h',
++   'gtkstyle.h',
 +diff --git a/gtk/gen-gtk-gresources-xml.py b/gtk/gen-gtk-gresources-xml.py
-+index 8181fb7..b9e78a5 100644
++index 8181fb7..1fa3c30 100644
 +--- a/gtk/gen-gtk-gresources-xml.py
 ++++ b/gtk/gen-gtk-gresources-xml.py
 +@@ -31,21 +31,8 @@ xml += '\n'
@@ -50,7 +133,7 @@ index 0000000..5660a3d
 + xml += '''
 +     <file>theme/win32/gtk-win32-base.css</file>
 +     <file>theme/win32/gtk.css</file>
-+@@ -59,7 +46,36 @@ for f in get_files('gesture', '.symbolic.png'):
++@@ -59,7 +46,37 @@ for f in get_files('gesture', '.symbolic.png'):
 + 
 + xml += '\n'
 + 
@@ -77,6 +160,7 @@ index 0000000..5660a3d
 ++    'gtkpagesetupunixdialog.ui',
 ++    'gtkprintunixdialog.ui',
 ++    'gtkrecentchooserdefault.ui',
+++    'gtkscalebutton.ui',
 ++    'gtksearchbar.ui',
 ++    'gtkvolumebutton.ui',
 ++}
@@ -87,7 +171,7 @@ index 0000000..5660a3d
 +   xml += '    <file preprocess=\'xml-stripblanks\'>ui/{0}</file>\n'.format(f)
 + 
 + xml += '\n'
-+@@ -71,12 +87,7 @@ for s in ['16x16', '22x22', '24x24', '32x32', '48x48']:
++@@ -71,12 +88,7 @@ for s in ['16x16', '22x22', '24x24', '32x32', '48x48']:
 +       for f in get_files(icons_dir, '.png'):
 +         xml += '    <file>icons/{0}/{1}/{2}</file>\n'.format(s,c,f)
 + 
@@ -101,10 +185,27 @@ index 0000000..5660a3d
 + </gresources>'''
 + 
 +diff --git a/gtk/gtk.h b/gtk/gtk.h
-+index c08454c..100b9dd 100644
++index c08454c..5d643c8 100644
 +--- a/gtk/gtk.h
 ++++ b/gtk/gtk.h
-+@@ -52,7 +52,6 @@
++@@ -34,16 +34,9 @@
++ #include <gtk/gtkaccelmap.h>
++ #include <gtk/gtkaccessible.h>
++ #include <gtk/gtkactionable.h>
++-#include <gtk/gtkactionbar.h>
++ #include <gtk/gtkadjustment.h>
++-#include <gtk/gtkappchooser.h>
++-#include <gtk/gtkappchooserdialog.h>
++-#include <gtk/gtkappchooserwidget.h>
++-#include <gtk/gtkappchooserbutton.h>
++ #include <gtk/gtkapplication.h>
++ #include <gtk/gtkapplicationwindow.h>
++-#include <gtk/gtkaspectframe.h>
++-#include <gtk/gtkassistant.h>
++ #include <gtk/gtkbbox.h>
++ #include <gtk/gtkbin.h>
++ #include <gtk/gtkbindings.h>
++@@ -52,29 +45,20 @@
 + #include <gtk/gtkbuildable.h>
 + #include <gtk/gtkbuilder.h>
 + #include <gtk/gtkbutton.h>
@@ -112,27 +213,66 @@ index 0000000..5660a3d
 + #include <gtk/gtkcellarea.h>
 + #include <gtk/gtkcellareabox.h>
 + #include <gtk/gtkcellareacontext.h>
-+@@ -71,9 +70,7 @@
++ #include <gtk/gtkcelleditable.h>
++ #include <gtk/gtkcelllayout.h>
++ #include <gtk/gtkcellrenderer.h>
++-#include <gtk/gtkcellrendereraccel.h>
++-#include <gtk/gtkcellrenderercombo.h>
++ #include <gtk/gtkcellrendererpixbuf.h>
++-#include <gtk/gtkcellrendererprogress.h>
++-#include <gtk/gtkcellrendererspin.h>
++-#include <gtk/gtkcellrendererspinner.h>
++ #include <gtk/gtkcellrenderertext.h>
++ #include <gtk/gtkcellrenderertoggle.h>
++ #include <gtk/gtkcellview.h>
 + #include <gtk/gtkcheckbutton.h>
 + #include <gtk/gtkcheckmenuitem.h>
 + #include <gtk/gtkclipboard.h>
 +-#include <gtk/gtkcolorbutton.h>
 + #include <gtk/gtkcolorchooser.h>
 +-#include <gtk/gtkcolorchooserdialog.h>
-+ #include <gtk/gtkcolorchooserwidget.h>
++-#include <gtk/gtkcolorchooserwidget.h>
 + #include <gtk/gtkcolorutils.h>
 + #include <gtk/gtkcombobox.h>
-+@@ -106,9 +103,7 @@
++ #include <gtk/gtkcomboboxtext.h>
++@@ -97,19 +81,12 @@
++ #include <gtk/gtkeventcontrollerkey.h>
++ #include <gtk/gtkeventcontrollermotion.h>
++ #include <gtk/gtkeventcontrollerscroll.h>
++-#include <gtk/gtkexpander.h>
++-#include <gtk/gtkfixed.h>
++ #include <gtk/gtkfilechooser.h>
++ #include <gtk/gtkfilechooserbutton.h>
++ #include <gtk/gtkfilechooserdialog.h>
++ #include <gtk/gtkfilechoosernative.h>
 + #include <gtk/gtkfilechooserwidget.h>
 + #include <gtk/gtkfilefilter.h>
-+ #include <gtk/gtkflowbox.h>
++-#include <gtk/gtkflowbox.h>
 +-#include <gtk/gtkfontbutton.h>
-+ #include <gtk/gtkfontchooser.h>
++-#include <gtk/gtkfontchooser.h>
 +-#include <gtk/gtkfontchooserdialog.h>
-+ #include <gtk/gtkfontchooserwidget.h>
++-#include <gtk/gtkfontchooserwidget.h>
 + #include <gtk/gtkframe.h>
 + #include <gtk/gtkgesture.h>
-+@@ -139,7 +134,6 @@
++ #include <gtk/gtkgesturedrag.h>
++@@ -121,11 +98,9 @@
++ #include <gtk/gtkgesturestylus.h>
++ #include <gtk/gtkgestureswipe.h>
++ #include <gtk/gtkgesturezoom.h>
++-#include <gtk/gtkglarea.h>
++ #include <gtk/gtkgrid.h>
++ #include <gtk/gtkheaderbar.h>
++ #include <gtk/gtkicontheme.h>
++-#include <gtk/gtkiconview.h>
++ #include <gtk/gtkimage.h>
++ #include <gtk/gtkimcontext.h>
++ #include <gtk/gtkimcontextinfo.h>
++@@ -134,12 +109,9 @@
++ #include <gtk/gtkinfobar.h>
++ #include <gtk/gtkinvisible.h>
++ #include <gtk/gtklabel.h>
++-#include <gtk/gtklayout.h>
++-#include <gtk/gtklevelbar.h>
 + #include <gtk/gtklinkbutton.h>
 + #include <gtk/gtklistbox.h>
 + #include <gtk/gtkliststore.h>
@@ -140,7 +280,43 @@ index 0000000..5660a3d
 + #include <gtk/gtkmain.h>
 + #include <gtk/gtkmenu.h>
 + #include <gtk/gtkmenubar.h>
-+@@ -241,7 +235,6 @@
++@@ -153,10 +125,7 @@
++ #include <gtk/gtkmountoperation.h>
++ #include <gtk/gtknativedialog.h>
++ #include <gtk/gtknotebook.h>
++-#include <gtk/gtkoffscreenwindow.h>
++ #include <gtk/gtkorientable.h>
++-#include <gtk/gtkoverlay.h>
++-#include <gtk/gtkpadcontroller.h>
++ #include <gtk/gtkpagesetup.h>
++ #include <gtk/gtkpapersize.h>
++ #include <gtk/gtkpaned.h>
++@@ -172,16 +141,10 @@
++ #include <gtk/gtkradiomenuitem.h>
++ #include <gtk/gtkradiotoolbutton.h>
++ #include <gtk/gtkrange.h>
++-#include <gtk/gtkrecentchooser.h>
++-#include <gtk/gtkrecentchooserdialog.h>
++-#include <gtk/gtkrecentchoosermenu.h>
++-#include <gtk/gtkrecentchooserwidget.h>
++-#include <gtk/gtkrecentfilter.h>
++ #include <gtk/gtkrecentmanager.h>
++ #include <gtk/gtkrender.h>
++ #include <gtk/gtkrevealer.h>
++ #include <gtk/gtkscale.h>
++-#include <gtk/gtkscalebutton.h>
++ #include <gtk/gtkscrollable.h>
++ #include <gtk/gtkscrollbar.h>
++ #include <gtk/gtkscrolledwindow.h>
++@@ -208,7 +171,6 @@
++ #include <gtk/gtkstatusbar.h>
++ #include <gtk/gtkstylecontext.h>
++ #include <gtk/gtkstyleprovider.h>
++-#include <gtk/gtkswitch.h>
++ #include <gtk/gtktextattributes.h>
++ #include <gtk/gtktextbuffer.h>
++ #include <gtk/gtktextbufferrichtext.h>
++@@ -241,7 +203,6 @@
 + #include <gtk/gtktypes.h>
 + #include <gtk/gtkversion.h>
 + #include <gtk/gtkviewport.h>
@@ -148,6 +324,37 @@ index 0000000..5660a3d
 + #include <gtk/gtkwidget.h>
 + #include <gtk/gtkwidgetpath.h>
 + #include <gtk/gtkwindow.h>
++@@ -271,7 +232,6 @@
++ #include <gtk/deprecated/gtknumerableicon.h>
++ #include <gtk/deprecated/gtkradioaction.h>
++ #include <gtk/deprecated/gtkrc.h>
++-#include <gtk/deprecated/gtkrecentaction.h>
++ #include <gtk/deprecated/gtkstatusicon.h>
++ #include <gtk/deprecated/gtkstock.h>
++ #include <gtk/deprecated/gtkstyle.h>
++diff --git a/gtk/gtkcontainer.c b/gtk/gtkcontainer.c
++index 435a233..67c8815 100644
++--- a/gtk/gtkcontainer.c
+++++ b/gtk/gtkcontainer.c
++@@ -46,7 +46,6 @@
++ #include "gtksizerequestcacheprivate.h"
++ #include "gtkwidgetprivate.h"
++ #include "gtkwindow.h"
++-#include "gtkassistant.h"
++ #include "gtkintl.h"
++ #include "gtkstylecontextprivate.h"
++ #include "gtkwidgetpath.h"
++@@ -59,9 +58,7 @@
++  * inside internal structure as direct children for the purpose
++  * of forall().
++  */
++-#define SPECIAL_CONTAINER(x) (GTK_IS_ASSISTANT (x) || \
++-                              GTK_IS_ACTION_BAR (x) || \
++-                              GTK_IS_POPOVER_MENU (x) || \
+++#define SPECIAL_CONTAINER(x) (GTK_IS_POPOVER_MENU (x) || \
++                               GTK_IS_SHORTCUTS_SECTION (x) || \
++                               GTK_IS_SHORTCUTS_WINDOW (x))
++ 
 +diff --git a/gtk/gtkentry.c b/gtk/gtkentry.c
 +index 448b59d..ff6572a 100644
 +--- a/gtk/gtkentry.c
@@ -267,10 +474,31 @@ index 0000000..5660a3d
 +-}
 ++{ return; }
 +diff --git a/gtk/gtkwindow.c b/gtk/gtkwindow.c
-+index 7572bf1..06e7347 100644
++index 7572bf1..3ff0a15 100644
 +--- a/gtk/gtkwindow.c
 ++++ b/gtk/gtkwindow.c
-+@@ -12802,61 +12802,13 @@ gtk_window_set_debugging (gboolean enable,
++@@ -6288,7 +6288,6 @@ gtk_window_notify_startup (GtkWindow *window)
++   GtkWindowPrivate *priv = window->priv;
++ 
++   if (!disable_startup_notification &&
++-      !GTK_IS_OFFSCREEN_WINDOW (window) &&
++       priv->type != GTK_WINDOW_POPUP)
++     {
++       GdkWindow *gdk_window;
++@@ -12780,11 +12779,7 @@ warn_response (GtkDialog *dialog,
++ 
++ static gboolean
++ update_debugging (gpointer data)
++-{
++-  gtk_inspector_window_rescan (inspector_window);
++-  gtk_window_update_debugging_id = 0;
++-  return G_SOURCE_REMOVE;
++-}
+++{ gtk_window_update_debugging_id = 0; return G_SOURCE_REMOVE; }
++ 
++ static void
++ gtk_window_update_debugging (void)
++@@ -12802,61 +12797,13 @@ gtk_window_set_debugging (gboolean enable,
 +                           gboolean select,
 +                           gboolean warn)
 + {
@@ -340,10 +568,38 @@ index 0000000..5660a3d
 + 
 + /**
 +diff --git a/gtk/meson.build b/gtk/meson.build
-+index ea866d8..03381b1 100644
++index ea866d8..c6f3180 100644
 +--- a/gtk/meson.build
 ++++ b/gtk/meson.build
-+@@ -61,7 +61,6 @@ gtk_sources = files(
++@@ -1,6 +1,5 @@
++ subdir('deprecated')
++ subdir('a11y')
++-subdir('inspector')
++ 
++ gtk_cargs = [
++   '-DGTK_COMPILATION',
++@@ -33,20 +32,13 @@ gtk_sources = files(
++   'gtkaccellabel.c',
++   'gtkaccelmap.c',
++   'gtkaccessible.c',
++-  'gtkactionbar.c',
++   'gtkactionhelper.c',
++   'gtkadjustment.c',
++   'gtkallocatedbitmask.c',
++-  'gtkappchooser.c',
++-  'gtkappchooserwidget.c',
++-  'gtkappchooserbutton.c',
++-  'gtkappchooserdialog.c',
++   'gtkapplication.c',
++   'gtkapplicationaccels.c',
++   'gtkapplicationimpl.c',
++   'gtkapplicationwindow.c',
++-  'gtkaspectframe.c',
++-  'gtkassistant.c',
++   'gtkbbox.c',
++   'gtkbin.c',
++   'gtkbindings.c',
++@@ -61,7 +53,6 @@ gtk_sources = files(
 +   'gtkbuiltinicon.c',
 +   'gtkbutton.c',
 +   'gtkcairoblur.c',
@@ -351,18 +607,37 @@ index 0000000..5660a3d
 +   'gtkcellarea.c',
 +   'gtkcellareabox.c',
 +   'gtkcellareaboxcontext.c',
-+@@ -80,10 +79,8 @@ gtk_sources = files(
++@@ -69,29 +60,14 @@ gtk_sources = files(
++   'gtkcelleditable.c',
++   'gtkcelllayout.c',
++   'gtkcellrenderer.c',
++-  'gtkcellrendereraccel.c',
++-  'gtkcellrenderercombo.c',
++   'gtkcellrendererpixbuf.c',
++-  'gtkcellrendererprogress.c',
++-  'gtkcellrendererspin.c',
++-  'gtkcellrendererspinner.c',
++   'gtkcellrenderertext.c',
++   'gtkcellrenderertoggle.c',
 +   'gtkcellview.c',
 +   'gtkcheckbutton.c',
 +   'gtkcheckmenuitem.c',
 +-  'gtkcolorbutton.c',
 +   'gtkcolorchooser.c',
-+   'gtkcolorchooserwidget.c',
++-  'gtkcolorchooserwidget.c',
 +-  'gtkcolorchooserdialog.c',
-+   'gtkcoloreditor.c',
-+   'gtkcolorpicker.c',
-+   'gtkcolorpickerkwin.c',
-+@@ -169,8 +166,6 @@ gtk_sources = files(
++-  'gtkcoloreditor.c',
++-  'gtkcolorpicker.c',
++-  'gtkcolorpickerkwin.c',
++-  'gtkcolorpickerportal.c',
++-  'gtkcolorpickershell.c',
++-  'gtkcolorplane.c',
++   'gtkcolorscale.c',
++-  'gtkcolorswatch.c',
++   'gtkcolorutils.c',
++   'gtkcombobox.c',
++   'gtkcomboboxtext.c',
++@@ -169,8 +145,6 @@ gtk_sources = files(
 +   'gtkdragsource.c',
 +   'gtkdrawingarea.c',
 +   'gtkeditable.c',
@@ -371,17 +646,52 @@ index 0000000..5660a3d
 +   'gtkentry.c',
 +   'gtkentrybuffer.c',
 +   'gtkentrycompletion.c',
-+@@ -194,9 +189,7 @@ gtk_sources = files(
++@@ -179,7 +153,6 @@ gtk_sources = files(
++   'gtkeventcontrollerkey.c',
++   'gtkeventcontrollermotion.c',
++   'gtkeventcontrollerscroll.c',
++-  'gtkexpander.c',
++   'gtkfilechooser.c',
++   'gtkfilechooserbutton.c',
++   'gtkfilechooserdialog.c',
++@@ -192,15 +165,7 @@ gtk_sources = files(
++   'gtkfilefilter.c',
++   'gtkfilesystem.c',
 +   'gtkfilesystemmodel.c',
-+   'gtkfixed.c',
-+   'gtkflowbox.c',
++-  'gtkfixed.c',
++-  'gtkflowbox.c',
 +-  'gtkfontbutton.c',
-+   'gtkfontchooser.c',
++-  'gtkfontchooser.c',
 +-  'gtkfontchooserdialog.c',
-+   'gtkfontchooserutils.c',
-+   'gtkfontchooserwidget.c',
++-  'gtkfontchooserutils.c',
++-  'gtkfontchooserwidget.c',
 +   'gtkframe.c',
-+@@ -237,7 +230,6 @@ gtk_sources = files(
++-  'gtkgladecatalog.c',
++   'gtkgesture.c',
++   'gtkgesturedrag.c',
++   'gtkgesturelongpress.c',
++@@ -211,7 +176,6 @@ gtk_sources = files(
++   'gtkgesturestylus.c',
++   'gtkgestureswipe.c',
++   'gtkgesturezoom.c',
++-  'gtkglarea.c',
++   'gtkgrid.c',
++   'gtkheaderbar.c',
++   'gtkhsla.c',
++@@ -220,7 +184,6 @@ gtk_sources = files(
++   'gtkiconcachevalidator.c',
++   'gtkiconhelper.c',
++   'gtkicontheme.c',
++-  'gtkiconview.c',
++   'gtkimage.c',
++   'gtkimagedefinition.c',
++   'gtkimcontext.c',
++@@ -232,12 +195,9 @@ gtk_sources = files(
++   'gtkkeyhash.c',
++   'gtkkineticscrolling.c',
++   'gtklabel.c',
++-  'gtklayout.c',
++-  'gtklevelbar.c',
 +   'gtklinkbutton.c',
 +   'gtklistbox.c',
 +   'gtkliststore.c',
@@ -389,7 +699,48 @@ index 0000000..5660a3d
 +   'gtkmain.c',
 +   'gtkmagnifier.c',
 +   'gtkmenu.c',
-+@@ -374,7 +366,6 @@ gtk_sources = files(
++@@ -258,10 +218,7 @@ gtk_sources = files(
++   'gtkmountoperation.c',
++   'gtknativedialog.c',
++   'gtknotebook.c',
++-  'gtkoffscreenwindow.c',
++   'gtkorientable.c',
++-  'gtkoverlay.c',
++-  'gtkpadcontroller.c',
++   'gtkpagesetup.c',
++   'gtkpaned.c',
++   'gtkpango.c',
++@@ -286,13 +243,6 @@ gtk_sources = files(
++   'gtkradiotoolbutton.c',
++   'gtkrange.c',
++   'gtkrbtree.c',
++-  'gtkrecentchooserdefault.c',
++-  'gtkrecentchooserdialog.c',
++-  'gtkrecentchoosermenu.c',
++-  'gtkrecentchooserwidget.c',
++-  'gtkrecentchooserutils.c',
++-  'gtkrecentchooser.c',
++-  'gtkrecentfilter.c',
++   'gtkrecentmanager.c',
++   'gtkrender.c',
++   'gtkrenderbackground.c',
++@@ -301,7 +251,6 @@ gtk_sources = files(
++   'gtkrevealer.c',
++   'gtkroundedbox.c',
++   'gtkscale.c',
++-  'gtkscalebutton.c',
++   'gtkscrollable.c',
++   'gtkscrollbar.c',
++   'gtkscrolledwindow.c',
++@@ -332,7 +281,6 @@ gtk_sources = files(
++   'gtkstyleproperty.c',
++   'gtkstyleprovider.c',
++   'gtkstyleproviderprivate.c',
++-  'gtkswitch.c',
++   'gtktestutils.c',
++   'gtktextattributes.c',
++   'gtktextbtree.c',
++@@ -374,7 +322,6 @@ gtk_sources = files(
 +   'gtktreeview.c',
 +   'gtktreeviewcolumn.c',
 +   'gtkutils.c',
@@ -397,7 +748,24 @@ index 0000000..5660a3d
 +   'gtkviewport.c',
 +   'gtkwidget.c',
 +   'gtkwidgetpath.c',
-+@@ -421,7 +412,6 @@ gtk_gir_public_headers = files(
++@@ -403,16 +350,9 @@ gtk_gir_public_headers = files(
++   'gtkaccelmap.h',
++   'gtkaccessible.h',
++   'gtkactionable.h',
++-  'gtkactionbar.h',
++   'gtkadjustment.h',
++-  'gtkappchooser.h',
++-  'gtkappchooserbutton.h',
++-  'gtkappchooserdialog.h',
++-  'gtkappchooserwidget.h',
++   'gtkapplication.h',
++   'gtkapplicationwindow.h',
++-  'gtkaspectframe.h',
++-  'gtkassistant.h',
++   'gtkbbox.h',
++   'gtkbin.h',
++   'gtkbindings.h',
++@@ -421,29 +361,20 @@ gtk_gir_public_headers = files(
 +   'gtkbuilder.h',
 +   'gtkbuildable.h',
 +   'gtkbutton.h',
@@ -405,28 +773,66 @@ index 0000000..5660a3d
 +   'gtkcellarea.h',
 +   'gtkcellareacontext.h',
 +   'gtkcellareabox.h',
-+@@ -440,10 +430,8 @@ gtk_gir_public_headers = files(
++   'gtkcelleditable.h',
++   'gtkcelllayout.h',
++   'gtkcellrenderer.h',
++-  'gtkcellrendereraccel.h',
++-  'gtkcellrenderercombo.h',
++   'gtkcellrendererpixbuf.h',
++-  'gtkcellrendererprogress.h',
++-  'gtkcellrendererspin.h',
++-  'gtkcellrendererspinner.h',
++   'gtkcellrenderertext.h',
++   'gtkcellrenderertoggle.h',
++   'gtkcellview.h',
 +   'gtkcheckbutton.h',
 +   'gtkcheckmenuitem.h',
 +   'gtkclipboard.h',
 +-  'gtkcolorbutton.h',
 +   'gtkcolorchooser.h',
-+   'gtkcolorchooserwidget.h',
++-  'gtkcolorchooserwidget.h',
 +-  'gtkcolorchooserdialog.h',
 +   'gtkcolorutils.h',
 +   'gtkcombobox.h',
 +   'gtkcomboboxtext.h',
-+@@ -475,9 +463,7 @@ gtk_gir_public_headers = files(
++@@ -466,19 +397,12 @@ gtk_gir_public_headers = files(
++   'gtkeventcontrollerkey.h',
++   'gtkeventcontrollermotion.h',
++   'gtkeventcontrollerscroll.h',
++-  'gtkexpander.h',
++   'gtkfilechooser.h',
++   'gtkfilechooserbutton.h',
++   'gtkfilechooserdialog.h',
++   'gtkfilechoosernative.h',
++   'gtkfilechooserwidget.h',
 +   'gtkfilefilter.h',
-+   'gtkfixed.h',
-+   'gtkflowbox.h',
++-  'gtkfixed.h',
++-  'gtkflowbox.h',
 +-  'gtkfontbutton.h',
-+   'gtkfontchooser.h',
++-  'gtkfontchooser.h',
 +-  'gtkfontchooserdialog.h',
-+   'gtkfontchooserwidget.h',
++-  'gtkfontchooserwidget.h',
 +   'gtkframe.h',
 +   'gtkgesture.h',
-+@@ -509,7 +495,6 @@ gtk_gir_public_headers = files(
++   'gtkgesturedrag.h',
++@@ -490,11 +414,9 @@ gtk_gir_public_headers = files(
++   'gtkgesturestylus.h',
++   'gtkgestureswipe.h',
++   'gtkgesturezoom.h',
++-  'gtkglarea.h',
++   'gtkgrid.h',
++   'gtkheaderbar.h',
++   'gtkicontheme.h',
++-  'gtkiconview.h',
++   'gtkimage.h',
++   'gtkimcontext.h',
++   'gtkimcontextinfo.h',
++@@ -504,12 +426,9 @@ gtk_gir_public_headers = files(
++   'gtkinfobar.h',
++   'gtkinvisible.h',
++   'gtklabel.h',
++-  'gtklayout.h',
++-  'gtklevelbar.h',
 +   'gtklinkbutton.h',
 +   'gtklistbox.h',
 +   'gtkliststore.h',
@@ -434,7 +840,43 @@ index 0000000..5660a3d
 +   'gtkmain.h',
 +   'gtkmenu.h',
 +   'gtkmenubar.h',
-+@@ -611,7 +596,6 @@ gtk_gir_public_headers = files(
++@@ -523,10 +442,7 @@ gtk_gir_public_headers = files(
++   'gtkmountoperation.h',
++   'gtknativedialog.h',
++   'gtknotebook.h',
++-  'gtkoffscreenwindow.h',
++   'gtkorientable.h',
++-  'gtkoverlay.h',
++-  'gtkpadcontroller.h',
++   'gtkpagesetup.h',
++   'gtkpaned.h',
++   'gtkpapersize.h',
++@@ -543,16 +459,10 @@ gtk_gir_public_headers = files(
++   'gtkradiomenuitem.h',
++   'gtkradiotoolbutton.h',
++   'gtkrange.h',
++-  'gtkrecentchooser.h',
++-  'gtkrecentchooserdialog.h',
++-  'gtkrecentchoosermenu.h',
++-  'gtkrecentchooserwidget.h',
++-  'gtkrecentfilter.h',
++   'gtkrecentmanager.h',
++   'gtkrender.h',
++   'gtkrevealer.h',
++   'gtkscale.h',
++-  'gtkscalebutton.h',
++   'gtkscrollable.h',
++   'gtkscrollbar.h',
++   'gtkscrolledwindow.h',
++@@ -580,7 +490,6 @@ gtk_gir_public_headers = files(
++   'gtkstatusbar.h',
++   'gtkstylecontext.h',
++   'gtkstyleprovider.h',
++-  'gtkswitch.h',
++   'gtktestutils.h',
++   'gtktextattributes.h',
++   'gtktextbuffer.h',
++@@ -611,7 +520,6 @@ gtk_gir_public_headers = files(
 +   'gtktreeviewcolumn.h',
 +   'gtktypes.h',
 +   'gtkviewport.h',
@@ -442,8 +884,16 @@ index 0000000..5660a3d
 +   'gtkwidget.h',
 +   'gtkwidgetpath.h',
 +   'gtkwindow.h',
++@@ -823,7 +731,6 @@ gtk_gen_headers = [
++ gtk_sources += [
++   gtk_dbus_src,
++   gtk_deprecated_sources,
++-  inspector_sources,
++   a11y_sources,
++   gtkresources,
++   gtkmarshalers,
 diff --git a/ports/gtk3/portfile.cmake b/ports/gtk3/portfile.cmake
-index 52f7e8e..ea5d2ce 100644
+index 52f7e8e..638b09a 100644
 --- a/ports/gtk3/portfile.cmake
 +++ b/ports/gtk3/portfile.cmake
 @@ -21,6 +21,7 @@ vcpkg_extract_source_archive(SOURCE_PATH
@@ -454,8 +904,11 @@ index 52f7e8e..ea5d2ce 100644
  )
  
  vcpkg_find_acquire_program(PKGCONFIG)
-@@ -65,6 +66,7 @@ vcpkg_configure_meson(
+@@ -63,8 +64,10 @@ vcpkg_configure_meson(
+         -Dprofiler=false            # include tracing support for sysprof
+         -Dtracker3=false            # Enable Tracker3 filechooser search
          -Dcolord=no                 # Build colord support for the CUPS printing backend
++        -Dprint_backends=       # Disable all print backend modules on Windows (file backend needs Unix-only sources; GtkPrintOperation win32 backend is separate and always compiled)
      OPTIONS_RELEASE
          ${OPTIONS_RELEASE}
 +        -Db_lto=true                # Whole-program optimization (/GL + /LTCG on MSVC) to reduce .text
