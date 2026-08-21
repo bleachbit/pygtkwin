@@ -66,24 +66,24 @@ def init_git_repo(src_dir):
 
 def remove_line_from_file(file_path, line_content):
     """Remove a line containing line_content from file_path."""
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
     new_lines = [l for l in lines if line_content not in l]
     if len(new_lines) == len(lines):
         print(f"  WARNING: '{line_content}' not found in {file_path}")
-    with open(file_path, 'w') as f:
+    with open(file_path, 'w', encoding='utf-8') as f:
         f.writelines(new_lines)
 
 
 def remove_lines_matching(file_path, patterns):
     """Remove all lines containing any of the given patterns from file_path."""
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
     new_lines = [l for l in lines if not any(p in l for p in patterns)]
     removed = len(lines) - len(new_lines)
     if removed == 0:
         print(f"  WARNING: no matches for {patterns} in {file_path}")
-    with open(file_path, 'w') as f:
+    with open(file_path, 'w', encoding='utf-8') as f:
         f.writelines(new_lines)
 
 
@@ -93,7 +93,7 @@ def stub_function(file_path, function_name, replacement_body):
     Finds the function definition and replaces everything between
     the opening brace and closing brace with replacement_body.
     """
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
     # Match: function_name(...) ... { ... }
@@ -129,26 +129,26 @@ def stub_function(file_path, function_name, replacement_body):
     sig_end = match.end() - 1  # position before {
     new_content = content[:sig_end] + replacement_body + content[i+1:]
 
-    with open(file_path, 'w') as f:
+    with open(file_path, 'w', encoding='utf-8') as f:
         f.write(new_content)
 
 
 def replace_in_file(file_path, old, new):
     """Replace old with new in file_path."""
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
     if old not in content:
         print(f"  WARNING: '{old}' not found in {file_path}")
         return
     content = content.replace(old, new)
-    with open(file_path, 'w') as f:
+    with open(file_path, 'w', encoding='utf-8') as f:
         f.write(content)
 
 
 def apply_gresource_changes(gtk_dir, config):
     """Modify gen-gtk-gresources-xml.py to exclude resources."""
     gen_script = os.path.join(gtk_dir, "gtk", "gen-gtk-gresources-xml.py")
-    with open(gen_script, 'r') as f:
+    with open(gen_script, 'r', encoding='utf-8') as f:
         content = f.read()
 
     # 1. Remove themes (e.g. HighContrast)
@@ -201,7 +201,7 @@ for f in get_files('ui', '.ui'):
     if config.get("remove_emoji_data"):
         content = content.replace("    <file>emoji/en.data</file>\n", '')
 
-    with open(gen_script, 'w') as f:
+    with open(gen_script, 'w', encoding='utf-8') as f:
         f.write(content)
 
 
@@ -314,11 +314,11 @@ def generate_vcpkg_portfile_patch(config, gtk_source_patch, work_dir):
 
     # Write the GTK source patch as a new file in the port dir
     gtk_patch_path = os.path.join(port_dir, "0003-debloat.patch")
-    with open(gtk_patch_path, 'w') as f:
+    with open(gtk_patch_path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(gtk_source_patch)
 
     # Modify the portfile.cmake
-    with open(portfile_path, 'r') as f:
+    with open(portfile_path, 'r', encoding='utf-8') as f:
         portfile_content = f.read()
 
     # Add 0003-debloat.patch to the PATCHES list
@@ -342,7 +342,7 @@ def generate_vcpkg_portfile_patch(config, gtk_source_patch, work_dir):
             "        -Db_lto=true                # Whole-program optimization (/GL + /LTCG on MSVC) to reduce .text"
         )
 
-    with open(portfile_path, 'w') as f:
+    with open(portfile_path, 'w', encoding='utf-8') as f:
         f.write(portfile_content)
 
     # Init git and diff
@@ -360,9 +360,9 @@ def generate_vcpkg_portfile_patch(config, gtk_source_patch, work_dir):
     run(["git", "commit", "-m", "restore original", "--quiet"], cwd=vcpkg_temp)
 
     # Now re-apply our changes
-    with open(gtk_patch_path, 'w') as f:
+    with open(gtk_patch_path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(gtk_source_patch)
-    with open(portfile_path, 'w') as f:
+    with open(portfile_path, 'w', encoding='utf-8') as f:
         f.write(portfile_content)
     run(["git", "add", "-A"], cwd=vcpkg_temp)
 
@@ -404,7 +404,7 @@ def main():
         vcpkg_patch = generate_vcpkg_portfile_patch(config, gtk_source_patch, work_dir)
 
         # Write the output patch
-        with open(OUTPUT_PATCH, 'w') as f:
+        with open(OUTPUT_PATCH, 'w', encoding='utf-8', newline='\n') as f:
             f.write(vcpkg_patch)
 
         line_count = vcpkg_patch.count('\n')
@@ -414,6 +414,14 @@ def main():
     finally:
         # Clean up
         if os.path.exists(work_dir):
+            # Git pack files are read-only on Windows; make writable before removal
+            for root, dirs, files in os.walk(work_dir):
+                for fname in files:
+                    fpath = os.path.join(root, fname)
+                    try:
+                        os.chmod(fpath, 0o777)
+                    except OSError:
+                        pass
             shutil.rmtree(work_dir)
             print(f"Cleaned up {work_dir}")
 

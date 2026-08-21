@@ -44,13 +44,21 @@ fi
 
 echo "=== Generating platform-specific typelibs ==="
 
+# Find a usable python (python3 on Linux/macOS, python on Windows Git Bash).
+# Honors PYTHON env var for when neither is on PATH (e.g. local Windows builds).
+python_bin="${PYTHON:-$(command -v python3 || command -v python || true)}"
+if [ -z "$python_bin" ]; then
+    echo "ERROR: neither python3 nor python found on PATH (set PYTHON env var)" >&2
+    exit 1
+fi
+
 # 1. Install the platform GIRs before compiling their typelibs.
 cp "$script_dir/gir/GLibWin32-2.0.gir" "$script_dir/gir/GioWin32-2.0.gir" "$gir_dir/"
 
 # 2. Remove only symbols provided by the matching platform GIR, then
 #    recompile the base typelibs from the filtered metadata.
 for namespace in GLib Gio; do
-    python3 "$script_dir/gir/filter_glib_gir.py" \
+    "$python_bin" "$script_dir/gir/filter_glib_gir.py" \
         "$gir_dir/$namespace-2.0.gir" "$gir_dir/${namespace}Win32-2.0.gir" \
         "$gir_dir/$namespace-2.0.gir.filtered"
     mv "$gir_dir/$namespace-2.0.gir.filtered" "$gir_dir/$namespace-2.0.gir"

@@ -10,32 +10,18 @@
         "gtkvolumebutton.c",
         "gtkcolorbutton.c",
         "gtkcalendar.c",
-        "gtkassistant.c",
-        "gtksearchbar.c",
-        "gtkactionbar.c",
-        "gtkrecentchooserdefault.c",
-        "gtkcoloreditor.c",
         "gtkfontbutton.c",
-        "gtkfontchooserwidget.c",
         "gtkfontchooserdialog.c",
-        "gtkcolorchooserdialog.c",
-        "gtkappchooserdialog.c",
-        "gtkappchooserwidget.c"
+        "gtkcolorchooserdialog.c"
       ],
       "headers": [
         "gtklockbutton.h",
         "gtkvolumebutton.h",
         "gtkcolorbutton.h",
         "gtkcalendar.h",
-        "gtkassistant.h",
-        "gtksearchbar.h",
-        "gtkactionbar.h",
         "gtkcolorchooserdialog.h",
         "gtkfontbutton.h",
-        "gtkfontchooserdialog.h",
-        "gtkfontchooserwidget.h",
-        "gtkappchooserdialog.h",
-        "gtkappchooserwidget.h"
+        "gtkfontchooserdialog.h"
       ],
       "a11y_sources": [
         "gtklockbuttonaccessible.c"
@@ -117,8 +103,6 @@
 
   "meson_options": {
     "_comment": "Added to vcpkg portfile.cmake meson configure step.",
-    "print_backends": "file",
     "b_lto": true
-  },
-
+  }
 }

@@ -1,0 +1,28 @@
+diff --git a/ports/gtk3/fix-unistd.patch b/ports/gtk3/fix-unistd.patch
+new file mode 100644
+index 0000000..e1e1e1e
+--- /dev/null
++++ b/ports/gtk3/fix-unistd.patch
+@@ -0,0 +1,12 @@
++--- a/modules/printbackends/file/gtkprintbackendfile.c
+++++ b/modules/printbackends/file/gtkprintbackendfile.c
++@@ -19,7 +19,9 @@
++ 
++ #include "config.h"
++ 
+++#ifdef G_OS_UNIX
++ #include <unistd.h>
+++#endif
++ #include <sys/types.h>
++ #include <sys/stat.h>
++ #include <fcntl.h>
+diff --git a/ports/gtk3/portfile.cmake b/ports/gtk3/portfile.cmake
+--- a/ports/gtk3/portfile.cmake
++++ b/ports/gtk3/portfile.cmake
+@@ -24,6 +24,7 @@
+         avoid-multiple-definition.diff
+         0003-debloat.patch
++        fix-unistd.patch
+ )
+
+ vcpkg_find_acquire_program(PKGCONFIG)
