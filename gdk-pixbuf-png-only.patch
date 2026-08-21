@@ -1,0 +1,22 @@
+diff --git a/ports/gdk-pixbuf/vcpkg.json b/ports/gdk-pixbuf/vcpkg.json
+--- a/ports/gdk-pixbuf/vcpkg.json
++++ b/ports/gdk-pixbuf/vcpkg.json
+@@ -1,7 +1,7 @@
+ {
+   "name": "gdk-pixbuf",
+   "version": "2.44.6",
+-  "port-version": 1,
++  "port-version": 2,
+   "description": "Image loading library.",
+   "homepage": "https://gitlab.gnome.org/GNOME/gdk-pixbuf",
+   "license": "LGPL-2.1-or-later",
+@@ -32,8 +32,6 @@
+     }
+   ],
+   "default-features": [
+-    "jpeg",
+-    "png",
+-    "tiff"
++    "png"
+   ],
+   "features": {
