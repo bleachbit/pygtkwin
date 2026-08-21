@@ -1,0 +1,559 @@
+diff --git a/ports/gtk3/0003-debloat.patch b/ports/gtk3/0003-debloat.patch
+new file mode 100644
+index 0000000..934829e
+--- /dev/null
++++ b/ports/gtk3/0003-debloat.patch
+@@ -0,0 +1,530 @@
++diff --git a/gtk/a11y/meson.build b/gtk/a11y/meson.build
++index 8c615c8..44d5a32 100644
++--- a/gtk/a11y/meson.build
+++++ b/gtk/a11y/meson.build
++@@ -27,7 +27,6 @@ a11y_sources = files(
++   'gtklinkbuttonaccessible.c',
++   'gtklistboxaccessible.c',
++   'gtklistboxrowaccessible.c',
++-  'gtklockbuttonaccessible.c',
++   'gtkmenuaccessible.c',
++   'gtkmenubuttonaccessible.c',
++   'gtkmenushellaccessible.c',
++@@ -86,7 +85,6 @@ a11y_headers = files(
++   'gtklinkbuttonaccessible.h',
++   'gtklistboxaccessible.h',
++   'gtklistboxrowaccessible.h',
++-  'gtklockbuttonaccessible.h',
++   'gtkmenuaccessible.h',
++   'gtkmenubuttonaccessible.h',
++   'gtkmenuitemaccessible.h',
++diff --git a/gtk/gen-gtk-gresources-xml.py b/gtk/gen-gtk-gresources-xml.py
++index 8181fb7..b9e78a5 100644
++--- a/gtk/gen-gtk-gresources-xml.py
+++++ b/gtk/gen-gtk-gresources-xml.py
++@@ -31,21 +31,8 @@ xml += '\n'
++ for f in get_files('theme/Adwaita/assets', '.svg'):
++   xml += '    <file>theme/Adwaita/assets/{0}</file>\n'.format(f)
++ 
++-xml += '''
++-    <file>theme/HighContrast/gtk.css</file>
++-    <file alias='theme/HighContrastInverse/gtk.css'>theme/HighContrast/gtk-inverse.css</file>
++-    <file>theme/HighContrast/gtk-contained.css</file>
++-    <file>theme/HighContrast/gtk-contained-inverse.css</file>
++-'''
++-
++-for f in get_files('theme/HighContrast/assets', '.png'):
++-  xml += '    <file>theme/HighContrast/assets/{0}</file>\n'.format(f)
++-
++ xml += '\n'
++ 
++-for f in get_files('theme/HighContrast/assets', '.svg'):
++-  xml += '    <file>theme/HighContrast/assets/{0}</file>\n'.format(f)
++-
++ xml += '''
++     <file>theme/win32/gtk-win32-base.css</file>
++     <file>theme/win32/gtk.css</file>
++@@ -59,7 +46,36 @@ for f in get_files('gesture', '.symbolic.png'):
++ 
++ xml += '\n'
++ 
+++# Exclude .ui files for widgets not used by BleachBit and for platform-
+++# inappropriate dialogs (Unix print dialogs, macOS quartz application).
+++# The corresponding C source is either not compiled on Windows (printunix,
+++# quartz) or never instantiated by BleachBit (emoji, font/color/app chooser,
+++# assistant, recent chooser, volume button, search bar, lock button, action
+++# bar).  Removing the template resources saves .rdata in the shared library.
+++excluded_ui = {
+++    'gtkactionbar.ui',
+++    'gtkappchooserdialog.ui',
+++    'gtkappchooserwidget.ui',
+++    'gtkapplication-quartz.ui',
+++    'gtkassistant.ui',
+++    'gtkcolorchooserdialog.ui',
+++    'gtkcoloreditor.ui',
+++    'gtkemojichooser.ui',
+++    'gtkemojicompletion.ui',
+++    'gtkfontbutton.ui',
+++    'gtkfontchooserdialog.ui',
+++    'gtkfontchooserwidget.ui',
+++    'gtklockbutton.ui',
+++    'gtkpagesetupunixdialog.ui',
+++    'gtkprintunixdialog.ui',
+++    'gtkrecentchooserdefault.ui',
+++    'gtksearchbar.ui',
+++    'gtkvolumebutton.ui',
+++}
+++
++ for f in get_files('ui', '.ui'):
+++  if f in excluded_ui:
+++    continue
++   xml += '    <file preprocess=\'xml-stripblanks\'>ui/{0}</file>\n'.format(f)
++ 
++ xml += '\n'
++@@ -71,12 +87,7 @@ for s in ['16x16', '22x22', '24x24', '32x32', '48x48']:
++       for f in get_files(icons_dir, '.png'):
++         xml += '    <file>icons/{0}/{1}/{2}</file>\n'.format(s,c,f)
++ 
++-for f in get_files('inspector', '.ui'):
++-  xml += '    <file compressed=\'true\' preprocess=\'xml-stripblanks\'>inspector/{0}</file>\n'.format(f)
++-
++ xml += '''
++-    <file>inspector/logo.png</file>
++-    <file>emoji/en.data</file>
++   </gresource>
++ </gresources>'''
++ 
++diff --git a/gtk/gtk.h b/gtk/gtk.h
++index c08454c..885a67e 100644
++--- a/gtk/gtk.h
+++++ b/gtk/gtk.h
++@@ -34,16 +34,12 @@
++ #include <gtk/gtkaccelmap.h>
++ #include <gtk/gtkaccessible.h>
++ #include <gtk/gtkactionable.h>
++-#include <gtk/gtkactionbar.h>
++ #include <gtk/gtkadjustment.h>
++ #include <gtk/gtkappchooser.h>
++-#include <gtk/gtkappchooserdialog.h>
++-#include <gtk/gtkappchooserwidget.h>
++ #include <gtk/gtkappchooserbutton.h>
++ #include <gtk/gtkapplication.h>
++ #include <gtk/gtkapplicationwindow.h>
++ #include <gtk/gtkaspectframe.h>
++-#include <gtk/gtkassistant.h>
++ #include <gtk/gtkbbox.h>
++ #include <gtk/gtkbin.h>
++ #include <gtk/gtkbindings.h>
++@@ -52,7 +48,6 @@
++ #include <gtk/gtkbuildable.h>
++ #include <gtk/gtkbuilder.h>
++ #include <gtk/gtkbutton.h>
++-#include <gtk/gtkcalendar.h>
++ #include <gtk/gtkcellarea.h>
++ #include <gtk/gtkcellareabox.h>
++ #include <gtk/gtkcellareacontext.h>
++@@ -71,9 +66,7 @@
++ #include <gtk/gtkcheckbutton.h>
++ #include <gtk/gtkcheckmenuitem.h>
++ #include <gtk/gtkclipboard.h>
++-#include <gtk/gtkcolorbutton.h>
++ #include <gtk/gtkcolorchooser.h>
++-#include <gtk/gtkcolorchooserdialog.h>
++ #include <gtk/gtkcolorchooserwidget.h>
++ #include <gtk/gtkcolorutils.h>
++ #include <gtk/gtkcombobox.h>
++@@ -106,10 +99,7 @@
++ #include <gtk/gtkfilechooserwidget.h>
++ #include <gtk/gtkfilefilter.h>
++ #include <gtk/gtkflowbox.h>
++-#include <gtk/gtkfontbutton.h>
++ #include <gtk/gtkfontchooser.h>
++-#include <gtk/gtkfontchooserdialog.h>
++-#include <gtk/gtkfontchooserwidget.h>
++ #include <gtk/gtkframe.h>
++ #include <gtk/gtkgesture.h>
++ #include <gtk/gtkgesturedrag.h>
++@@ -139,7 +129,6 @@
++ #include <gtk/gtklinkbutton.h>
++ #include <gtk/gtklistbox.h>
++ #include <gtk/gtkliststore.h>
++-#include <gtk/gtklockbutton.h>
++ #include <gtk/gtkmain.h>
++ #include <gtk/gtkmenu.h>
++ #include <gtk/gtkmenubar.h>
++@@ -185,7 +174,6 @@
++ #include <gtk/gtkscrollable.h>
++ #include <gtk/gtkscrollbar.h>
++ #include <gtk/gtkscrolledwindow.h>
++-#include <gtk/gtksearchbar.h>
++ #include <gtk/gtksearchentry.h>
++ #include <gtk/gtkselection.h>
++ #include <gtk/gtkseparator.h>
++@@ -241,7 +229,6 @@
++ #include <gtk/gtktypes.h>
++ #include <gtk/gtkversion.h>
++ #include <gtk/gtkviewport.h>
++-#include <gtk/gtkvolumebutton.h>
++ #include <gtk/gtkwidget.h>
++ #include <gtk/gtkwidgetpath.h>
++ #include <gtk/gtkwindow.h>
++diff --git a/gtk/gtkentry.c b/gtk/gtkentry.c
++index 448b59d..ff6572a 100644
++--- a/gtk/gtkentry.c
+++++ b/gtk/gtkentry.c
++@@ -39,8 +39,6 @@
++ #include "gtkentry.h"
++ #include "gtkentrybuffer.h"
++ #include "gtkiconhelperprivate.h"
++-#include "gtkemojichooser.h"
++-#include "gtkemojicompletion.h"
++ #include "gtkentrybuffer.h"
++ #include "gtkimcontextsimple.h"
++ #include "gtkimmulticontext.h"
++@@ -74,7 +72,6 @@
++ #include "gtkcssnodeprivate.h"
++ #include "gtkcsscustomgadgetprivate.h"
++ #include "gtkprogresstrackerprivate.h"
++-#include "gtkemojichooser.h"
++ #include "gtkwindow.h"
++ 
++ #include "a11y/gtkentryaccessible.h"
++@@ -11094,33 +11091,7 @@ gtk_entry_get_tabs (GtkEntry *entry)
++ 
++ static void
++ gtk_entry_insert_emoji (GtkEntry *entry)
++-{
++-  GtkWidget *chooser;
++-  GdkRectangle rect;
++-
++-  if (gtk_entry_get_input_hints (entry) & GTK_INPUT_HINT_NO_EMOJI)
++-    return;
++-
++-  if (gtk_widget_get_ancestor (GTK_WIDGET (entry), GTK_TYPE_EMOJI_CHOOSER) != NULL)
++-    return;
++-
++-  chooser = GTK_WIDGET (g_object_get_data (G_OBJECT (entry), "gtk-emoji-chooser"));
++-  if (!chooser)
++-    {
++-      chooser = gtk_emoji_chooser_new ();
++-      g_object_set_data (G_OBJECT (entry), "gtk-emoji-chooser", chooser);
++-
++-      gtk_popover_set_relative_to (GTK_POPOVER (chooser), GTK_WIDGET (entry));
++-      if (entry->priv->show_emoji_icon)
++-        {
++-          gtk_entry_get_icon_area (entry, GTK_ENTRY_ICON_SECONDARY, &rect);
++-          gtk_popover_set_pointing_to (GTK_POPOVER (chooser), &rect);
++-        }
++-      g_signal_connect_swapped (chooser, "emoji-picked", G_CALLBACK (gtk_entry_enter_text), entry);
++-    }
++-
++-  gtk_popover_popup (GTK_POPOVER (chooser));
++-}
+++{ return; }
++ 
++ static void
++ pick_emoji (GtkEntry *entry,
++@@ -11193,7 +11164,7 @@ set_enable_emoji_completion (GtkEntry *entry,
++ 
++   if (priv->enable_emoji_completion)
++     g_object_set_data (G_OBJECT (entry), "emoji-completion-popup",
++-                       gtk_emoji_completion_new (entry));
+++                       NULL);
++   else
++     g_object_set_data (G_OBJECT (entry), "emoji-completion-popup", NULL);
++ 
++diff --git a/gtk/gtktextview.c b/gtk/gtktextview.c
++index 394da40..1d86e50 100644
++--- a/gtk/gtktextview.c
+++++ b/gtk/gtktextview.c
++@@ -58,7 +58,6 @@
++ #include "gtktoolbar.h"
++ #include "gtkpixelcacheprivate.h"
++ #include "gtkmagnifierprivate.h"
++-#include "gtkemojichooser.h"
++ #include "gtkpango.h"
++ 
++ #include "a11y/gtktextviewaccessibleprivate.h"
++@@ -11494,39 +11493,4 @@ gtk_text_view_get_monospace (GtkTextView *text_view)
++ 
++ static void
++ gtk_text_view_insert_emoji (GtkTextView *text_view)
++-{
++-  GtkWidget *chooser;
++-  GtkTextIter iter;
++-  GdkRectangle rect;
++-  GtkTextBuffer *buffer;
++-
++-  if (gtk_text_view_get_input_hints (text_view) & GTK_INPUT_HINT_NO_EMOJI)
++-    return;
++-
++-  if (gtk_widget_get_ancestor (GTK_WIDGET (text_view), GTK_TYPE_EMOJI_CHOOSER) != NULL)
++-    return;
++-
++-  chooser = GTK_WIDGET (g_object_get_data (G_OBJECT (text_view), "gtk-emoji-chooser"));
++-  if (!chooser)
++-    {
++-      chooser = gtk_emoji_chooser_new ();
++-      g_object_set_data (G_OBJECT (text_view), "gtk-emoji-chooser", chooser);
++-
++-      gtk_popover_set_relative_to (GTK_POPOVER (chooser), GTK_WIDGET (text_view));
++-      g_signal_connect_swapped (chooser, "emoji-picked",
++-                                G_CALLBACK (gtk_text_view_insert_at_cursor), text_view);
++-    }
++-
++-  buffer = get_buffer (text_view);
++-  gtk_text_buffer_get_iter_at_mark (buffer, &iter,
++-                                    gtk_text_buffer_get_insert (buffer));
++-
++-  gtk_text_view_get_iter_location (text_view, &iter, (GdkRectangle *) &rect);
++-  gtk_text_view_buffer_to_window_coords (text_view, GTK_TEXT_WINDOW_TEXT,
++-                                         rect.x, rect.y, &rect.x, &rect.y);
++-  _text_window_to_widget_coords (text_view, &rect.x, &rect.y);
++-
++-  gtk_popover_set_pointing_to (GTK_POPOVER (chooser), &rect);
++-
++-  gtk_popover_popup (GTK_POPOVER (chooser));
++-}
+++{ return; }
++diff --git a/gtk/gtkwindow.c b/gtk/gtkwindow.c
++index 7572bf1..06e7347 100644
++--- a/gtk/gtkwindow.c
+++++ b/gtk/gtkwindow.c
++@@ -12802,61 +12802,13 @@ gtk_window_set_debugging (gboolean enable,
++                           gboolean select,
++                           gboolean warn)
++ {
++-  GtkWidget *dialog = NULL;
++-  GtkWidget *area;
++-  GtkWidget *check;
++-
++-  if (inspector_window == NULL)
++-    {
++-      gtk_inspector_init ();
++-      inspector_window = gtk_inspector_window_new ();
++-      g_signal_connect (inspector_window, "delete-event",
++-                        G_CALLBACK (gtk_widget_hide_on_delete), NULL);
++-
++-      if (warn)
++-        {
++-          dialog = gtk_message_dialog_new (GTK_WINDOW (inspector_window),
++-                                           GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
++-                                           GTK_MESSAGE_QUESTION,
++-                                           GTK_BUTTONS_NONE,
++-                                           _("Do you want to use GTK+ Inspector?"));
++-          gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
++-              _("GTK+ Inspector is an interactive debugger that lets you explore and "
++-                "modify the internals of any GTK+ application. Using it may cause the "
++-                "application to break or crash."));
++-
++-          area = gtk_message_dialog_get_message_area (GTK_MESSAGE_DIALOG (dialog));
++-          check = gtk_check_button_new_with_label (_("Don't show this message again"));
++-          gtk_widget_set_margin_start (check, 10);
++-          gtk_widget_show (check);
++-          gtk_container_add (GTK_CONTAINER (area), check);
++-          g_object_set_data (G_OBJECT (dialog), "check", check);
++-          gtk_dialog_add_button (GTK_DIALOG (dialog), _("_Cancel"), GTK_RESPONSE_NO);
++-          gtk_dialog_add_button (GTK_DIALOG (dialog), _("_OK"), GTK_RESPONSE_YES);
++-          g_signal_connect (dialog, "response", G_CALLBACK (warn_response), NULL);
++-          g_object_set_data (G_OBJECT (inspector_window), "warning_dialog", dialog);
++-        }
++-    }
++-
++-  dialog = g_object_get_data (G_OBJECT (inspector_window), "warning_dialog");
++-
++-  if (enable)
++-    {
++-      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
++-      gtk_window_present (GTK_WINDOW (inspector_window));
++-      G_GNUC_END_IGNORE_DEPRECATIONS
++-      if (dialog)
++-        gtk_widget_show (dialog);
++-
++-      if (select)
++-        gtk_inspector_window_select_widget_under_pointer (GTK_INSPECTOR_WINDOW (inspector_window));
++-    }
++-  else
++-    {
++-      if (dialog)
++-        gtk_widget_hide (dialog);
++-      gtk_widget_hide (inspector_window);
++-    }
+++  /* Inspector resources have been stripped from the gresource bundle to
+++   * reduce the shared-library size.  The interactive debugger is therefore
+++   * disabled unconditionally; attempting to create the inspector window
+++   * would fail because its GtkBuilder templates are no longer available. */
+++  (void) enable;
+++  (void) select;
+++  (void) warn;
++ }
++ 
++ /**
++diff --git a/gtk/meson.build b/gtk/meson.build
++index ea866d8..b36dba9 100644
++--- a/gtk/meson.build
+++++ b/gtk/meson.build
++@@ -22,7 +22,6 @@ gtk_sources = files(
++   'gtkactionobservable.c',
++   'gtkactionable.c',
++   'gtkquery.c',
++-  'gtksearchbar.c',
++   'gtksearchentry.c',
++   'gtksearchengine.c',
++   'gtksearchenginesimple.c',
++@@ -33,20 +32,16 @@ gtk_sources = files(
++   'gtkaccellabel.c',
++   'gtkaccelmap.c',
++   'gtkaccessible.c',
++-  'gtkactionbar.c',
++   'gtkactionhelper.c',
++   'gtkadjustment.c',
++   'gtkallocatedbitmask.c',
++   'gtkappchooser.c',
++-  'gtkappchooserwidget.c',
++   'gtkappchooserbutton.c',
++-  'gtkappchooserdialog.c',
++   'gtkapplication.c',
++   'gtkapplicationaccels.c',
++   'gtkapplicationimpl.c',
++   'gtkapplicationwindow.c',
++   'gtkaspectframe.c',
++-  'gtkassistant.c',
++   'gtkbbox.c',
++   'gtkbin.c',
++   'gtkbindings.c',
++@@ -61,7 +56,6 @@ gtk_sources = files(
++   'gtkbuiltinicon.c',
++   'gtkbutton.c',
++   'gtkcairoblur.c',
++-  'gtkcalendar.c',
++   'gtkcellarea.c',
++   'gtkcellareabox.c',
++   'gtkcellareaboxcontext.c',
++@@ -80,11 +74,8 @@ gtk_sources = files(
++   'gtkcellview.c',
++   'gtkcheckbutton.c',
++   'gtkcheckmenuitem.c',
++-  'gtkcolorbutton.c',
++   'gtkcolorchooser.c',
++   'gtkcolorchooserwidget.c',
++-  'gtkcolorchooserdialog.c',
++-  'gtkcoloreditor.c',
++   'gtkcolorpicker.c',
++   'gtkcolorpickerkwin.c',
++   'gtkcolorpickerportal.c',
++@@ -169,8 +160,6 @@ gtk_sources = files(
++   'gtkdragsource.c',
++   'gtkdrawingarea.c',
++   'gtkeditable.c',
++-  'gtkemojichooser.c',
++-  'gtkemojicompletion.c',
++   'gtkentry.c',
++   'gtkentrybuffer.c',
++   'gtkentrycompletion.c',
++@@ -194,11 +183,8 @@ gtk_sources = files(
++   'gtkfilesystemmodel.c',
++   'gtkfixed.c',
++   'gtkflowbox.c',
++-  'gtkfontbutton.c',
++   'gtkfontchooser.c',
++-  'gtkfontchooserdialog.c',
++   'gtkfontchooserutils.c',
++-  'gtkfontchooserwidget.c',
++   'gtkframe.c',
++   'gtkgladecatalog.c',
++   'gtkgesture.c',
++@@ -237,7 +223,6 @@ gtk_sources = files(
++   'gtklinkbutton.c',
++   'gtklistbox.c',
++   'gtkliststore.c',
++-  'gtklockbutton.c',
++   'gtkmain.c',
++   'gtkmagnifier.c',
++   'gtkmenu.c',
++@@ -286,7 +271,6 @@ gtk_sources = files(
++   'gtkradiotoolbutton.c',
++   'gtkrange.c',
++   'gtkrbtree.c',
++-  'gtkrecentchooserdefault.c',
++   'gtkrecentchooserdialog.c',
++   'gtkrecentchoosermenu.c',
++   'gtkrecentchooserwidget.c',
++@@ -374,7 +358,6 @@ gtk_sources = files(
++   'gtktreeview.c',
++   'gtktreeviewcolumn.c',
++   'gtkutils.c',
++-  'gtkvolumebutton.c',
++   'gtkviewport.c',
++   'gtkwidget.c',
++   'gtkwidgetpath.c',
++@@ -403,16 +386,12 @@ gtk_gir_public_headers = files(
++   'gtkaccelmap.h',
++   'gtkaccessible.h',
++   'gtkactionable.h',
++-  'gtkactionbar.h',
++   'gtkadjustment.h',
++   'gtkappchooser.h',
++   'gtkappchooserbutton.h',
++-  'gtkappchooserdialog.h',
++-  'gtkappchooserwidget.h',
++   'gtkapplication.h',
++   'gtkapplicationwindow.h',
++   'gtkaspectframe.h',
++-  'gtkassistant.h',
++   'gtkbbox.h',
++   'gtkbin.h',
++   'gtkbindings.h',
++@@ -421,7 +400,6 @@ gtk_gir_public_headers = files(
++   'gtkbuilder.h',
++   'gtkbuildable.h',
++   'gtkbutton.h',
++-  'gtkcalendar.h',
++   'gtkcellarea.h',
++   'gtkcellareacontext.h',
++   'gtkcellareabox.h',
++@@ -440,10 +418,8 @@ gtk_gir_public_headers = files(
++   'gtkcheckbutton.h',
++   'gtkcheckmenuitem.h',
++   'gtkclipboard.h',
++-  'gtkcolorbutton.h',
++   'gtkcolorchooser.h',
++   'gtkcolorchooserwidget.h',
++-  'gtkcolorchooserdialog.h',
++   'gtkcolorutils.h',
++   'gtkcombobox.h',
++   'gtkcomboboxtext.h',
++@@ -475,10 +451,7 @@ gtk_gir_public_headers = files(
++   'gtkfilefilter.h',
++   'gtkfixed.h',
++   'gtkflowbox.h',
++-  'gtkfontbutton.h',
++   'gtkfontchooser.h',
++-  'gtkfontchooserdialog.h',
++-  'gtkfontchooserwidget.h',
++   'gtkframe.h',
++   'gtkgesture.h',
++   'gtkgesturedrag.h',
++@@ -509,7 +482,6 @@ gtk_gir_public_headers = files(
++   'gtklinkbutton.h',
++   'gtklistbox.h',
++   'gtkliststore.h',
++-  'gtklockbutton.h',
++   'gtkmain.h',
++   'gtkmenu.h',
++   'gtkmenubar.h',
++@@ -556,7 +528,6 @@ gtk_gir_public_headers = files(
++   'gtkscrollable.h',
++   'gtkscrollbar.h',
++   'gtkscrolledwindow.h',
++-  'gtksearchbar.h',
++   'gtksearchentry.h',
++   'gtkselection.h',
++   'gtkseparator.h',
++@@ -611,7 +582,6 @@ gtk_gir_public_headers = files(
++   'gtktreeviewcolumn.h',
++   'gtktypes.h',
++   'gtkviewport.h',
++-  'gtkvolumebutton.h',
++   'gtkwidget.h',
++   'gtkwidgetpath.h',
++   'gtkwindow.h',
+diff --git a/ports/gtk3/portfile.cmake b/ports/gtk3/portfile.cmake
+index 52f7e8e..69c8abb 100644
+--- a/ports/gtk3/portfile.cmake
++++ b/ports/gtk3/portfile.cmake
+@@ -21,6 +21,7 @@ vcpkg_extract_source_archive(SOURCE_PATH
+         0001-build.patch
+         cairo-cpp-linkage.patch
+         avoid-multiple-definition.diff
++        0003-debloat.patch
+ )
+ 
+ vcpkg_find_acquire_program(PKGCONFIG)
+@@ -63,8 +64,10 @@ vcpkg_configure_meson(
+         -Dprofiler=false            # include tracing support for sysprof
+         -Dtracker3=false            # Enable Tracker3 filechooser search
+         -Dcolord=no                 # Build colord support for the CUPS printing backend
++        -Dprint_backends=file       # Only build the file print backend (cups/lpr/papi are Unix-only)
+     OPTIONS_RELEASE
+         ${OPTIONS_RELEASE}
++        -Db_lto=true                # Whole-program optimization (/GL + /LTCG on MSVC) to reduce .text
+     OPTIONS_DEBUG
+         -Dintrospection=false
+     ADDITIONAL_BINARIES

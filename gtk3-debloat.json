@@ -1,0 +1,124 @@
+{
+  "_comment": "GTK3 debloat configuration for BleachBit on Windows. Edit this file, then run: python3 generate_gtk3_debloat.py",
+  "gtk_version": "3.24.52",
+
+  "remove_compilation_units": [
+    {
+      "_comment": "Widgets with no internal GTK callers. Safe to remove whole .c+.h from the build.",
+      "sources": [
+        "gtklockbutton.c",
+        "gtkvolumebutton.c",
+        "gtkcolorbutton.c",
+        "gtkcalendar.c",
+        "gtkassistant.c",
+        "gtksearchbar.c",
+        "gtkactionbar.c",
+        "gtkrecentchooserdefault.c",
+        "gtkcoloreditor.c",
+        "gtkfontbutton.c",
+        "gtkfontchooserwidget.c",
+        "gtkfontchooserdialog.c",
+        "gtkcolorchooserdialog.c",
+        "gtkappchooserdialog.c",
+        "gtkappchooserwidget.c"
+      ],
+      "headers": [
+        "gtklockbutton.h",
+        "gtkvolumebutton.h",
+        "gtkcolorbutton.h",
+        "gtkcalendar.h",
+        "gtkassistant.h",
+        "gtksearchbar.h",
+        "gtkactionbar.h",
+        "gtkcolorchooserdialog.h",
+        "gtkfontbutton.h",
+        "gtkfontchooserdialog.h",
+        "gtkfontchooserwidget.h",
+        "gtkappchooserdialog.h",
+        "gtkappchooserwidget.h"
+      ],
+      "a11y_sources": [
+        "gtklockbuttonaccessible.c"
+      ],
+      "a11y_headers": [
+        "gtklockbuttonaccessible.h",
+        "gtklockbuttonaccessibleprivate.h"
+      ]
+    }
+  ],
+
+  "stub_callers": [
+    {
+      "_comment": "Emoji chooser/completion has callers in gtkentry.c and gtktextview.c. Stub the caller functions to early-return, replace the completion call with NULL, remove includes, then remove the emoji .c files.",
+      "sources_to_remove": [
+        "gtkemojichooser.c",
+        "gtkemojicompletion.c"
+      ],
+      "stubs": [
+        {
+          "file": "gtk/gtkentry.c",
+          "function": "gtk_entry_insert_emoji",
+          "replacement": "{ return; }"
+        },
+        {
+          "file": "gtk/gtktextview.c",
+          "function": "gtk_text_view_insert_emoji",
+          "replacement": "{ return; }"
+        }
+      ],
+      "replace_calls": [
+        {
+          "file": "gtk/gtkentry.c",
+          "old": "gtk_emoji_completion_new (entry)",
+          "new": "NULL"
+        }
+      ],
+      "remove_includes": [
+        {
+          "file": "gtk/gtkentry.c",
+          "headers": ["gtkemojichooser.h", "gtkemojicompletion.h"]
+        },
+        {
+          "file": "gtk/gtktextview.c",
+          "headers": ["gtkemojichooser.h"]
+        }
+      ]
+    }
+  ],
+
+  "gresource": {
+    "_comment": "Remove resources from the embedded gresource bundle.",
+    "exclude_ui": [
+      "gtkapplication-quartz.ui",
+      "gtkappchooserdialog.ui",
+      "gtkappchooserwidget.ui",
+      "gtkassistant.ui",
+      "gtkcolorchooserdialog.ui",
+      "gtkcoloreditor.ui",
+      "gtkemojichooser.ui",
+      "gtkemojicompletion.ui",
+      "gtkfontbutton.ui",
+      "gtkfontchooserdialog.ui",
+      "gtkfontchooserwidget.ui",
+      "gtklockbutton.ui",
+      "gtkpagesetupunixdialog.ui",
+      "gtkprintunixdialog.ui",
+      "gtkrecentchooserdefault.ui",
+      "gtksearchbar.ui",
+      "gtkvolumebutton.ui",
+      "gtkactionbar.ui"
+    ],
+    "remove_themes": ["HighContrast"],
+    "remove_inspector": true,
+    "remove_emoji_data": true
+  },
+
+  "stub_inspector_debugging": true,
+
+  "meson_options": {
+    "_comment": "Added to vcpkg portfile.cmake meson configure step.",
+    "print_backends": "file",
+    "b_lto": true
+  },
+
+}
