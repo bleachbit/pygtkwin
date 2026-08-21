@@ -1,9 +1,9 @@
 diff --git a/ports/gtk3/0003-debloat.patch b/ports/gtk3/0003-debloat.patch
 new file mode 100644
-index 0000000..934829e
+index 0000000..dff7c8a
 --- /dev/null
 +++ b/ports/gtk3/0003-debloat.patch
-@@ -0,0 +1,530 @@
+@@ -0,0 +1,520 @@
 +diff --git a/gtk/a11y/meson.build b/gtk/a11y/meson.build
 +index 8c615c8..44d5a32 100644
 +--- a/gtk/a11y/meson.build
@@ -101,10 +101,10 @@ index 0000000..934829e
 + </gresources>'''
 + 
 +diff --git a/gtk/gtk.h b/gtk/gtk.h
-+index c08454c..885a67e 100644
++index c08454c..3f228dd 100644
 +--- a/gtk/gtk.h
 ++++ b/gtk/gtk.h
-+@@ -34,16 +34,12 @@
++@@ -34,16 +34,11 @@
 + #include <gtk/gtkaccelmap.h>
 + #include <gtk/gtkaccessible.h>
 + #include <gtk/gtkactionable.h>
@@ -113,7 +113,7 @@ index 0000000..934829e
 + #include <gtk/gtkappchooser.h>
 +-#include <gtk/gtkappchooserdialog.h>
 +-#include <gtk/gtkappchooserwidget.h>
-+ #include <gtk/gtkappchooserbutton.h>
++-#include <gtk/gtkappchooserbutton.h>
 + #include <gtk/gtkapplication.h>
 + #include <gtk/gtkapplicationwindow.h>
 + #include <gtk/gtkaspectframe.h>
@@ -121,7 +121,7 @@ index 0000000..934829e
 + #include <gtk/gtkbbox.h>
 + #include <gtk/gtkbin.h>
 + #include <gtk/gtkbindings.h>
-+@@ -52,7 +48,6 @@
++@@ -52,7 +47,6 @@
 + #include <gtk/gtkbuildable.h>
 + #include <gtk/gtkbuilder.h>
 + #include <gtk/gtkbutton.h>
@@ -129,7 +129,7 @@ index 0000000..934829e
 + #include <gtk/gtkcellarea.h>
 + #include <gtk/gtkcellareabox.h>
 + #include <gtk/gtkcellareacontext.h>
-+@@ -71,9 +66,7 @@
++@@ -71,9 +65,7 @@
 + #include <gtk/gtkcheckbutton.h>
 + #include <gtk/gtkcheckmenuitem.h>
 + #include <gtk/gtkclipboard.h>
@@ -139,7 +139,7 @@ index 0000000..934829e
 + #include <gtk/gtkcolorchooserwidget.h>
 + #include <gtk/gtkcolorutils.h>
 + #include <gtk/gtkcombobox.h>
-+@@ -106,10 +99,7 @@
++@@ -106,10 +98,7 @@
 + #include <gtk/gtkfilechooserwidget.h>
 + #include <gtk/gtkfilefilter.h>
 + #include <gtk/gtkflowbox.h>
@@ -150,7 +150,7 @@ index 0000000..934829e
 + #include <gtk/gtkframe.h>
 + #include <gtk/gtkgesture.h>
 + #include <gtk/gtkgesturedrag.h>
-+@@ -139,7 +129,6 @@
++@@ -139,7 +128,6 @@
 + #include <gtk/gtklinkbutton.h>
 + #include <gtk/gtklistbox.h>
 + #include <gtk/gtkliststore.h>
@@ -158,14 +158,6 @@ index 0000000..934829e
 + #include <gtk/gtkmain.h>
 + #include <gtk/gtkmenu.h>
 + #include <gtk/gtkmenubar.h>
-+@@ -185,7 +174,6 @@
-+ #include <gtk/gtkscrollable.h>
-+ #include <gtk/gtkscrollbar.h>
-+ #include <gtk/gtkscrolledwindow.h>
-+-#include <gtk/gtksearchbar.h>
-+ #include <gtk/gtksearchentry.h>
-+ #include <gtk/gtkselection.h>
-+ #include <gtk/gtkseparator.h>
 +@@ -241,7 +229,6 @@
 + #include <gtk/gtktypes.h>
 + #include <gtk/gtkversion.h>
@@ -293,10 +285,18 @@ index 0000000..934829e
 +-}
 ++{ return; }
 +diff --git a/gtk/gtkwindow.c b/gtk/gtkwindow.c
-+index 7572bf1..06e7347 100644
++index 7572bf1..44d2287 100644
 +--- a/gtk/gtkwindow.c
 ++++ b/gtk/gtkwindow.c
-+@@ -12802,61 +12802,13 @@ gtk_window_set_debugging (gboolean enable,
++@@ -12781,7 +12781,6 @@ warn_response (GtkDialog *dialog,
++ static gboolean
++ update_debugging (gpointer data)
++ {
++-  gtk_inspector_window_rescan (inspector_window);
++   gtk_window_update_debugging_id = 0;
++   return G_SOURCE_REMOVE;
++ }
++@@ -12802,61 +12801,13 @@ gtk_window_set_debugging (gboolean enable,
 +                           gboolean select,
 +                           gboolean warn)
 + {
@@ -366,18 +366,17 @@ index 0000000..934829e
 + 
 + /**
 +diff --git a/gtk/meson.build b/gtk/meson.build
-+index ea866d8..b36dba9 100644
++index ea866d8..46d6553 100644
 +--- a/gtk/meson.build
 ++++ b/gtk/meson.build
-+@@ -22,7 +22,6 @@ gtk_sources = files(
-+   'gtkactionobservable.c',
-+   'gtkactionable.c',
-+   'gtkquery.c',
-+-  'gtksearchbar.c',
-+   'gtksearchentry.c',
-+   'gtksearchengine.c',
-+   'gtksearchenginesimple.c',
-+@@ -33,20 +32,16 @@ gtk_sources = files(
++@@ -1,6 +1,5 @@
++ subdir('deprecated')
++ subdir('a11y')
++-subdir('inspector')
++ 
++ gtk_cargs = [
++   '-DGTK_COMPILATION',
++@@ -33,20 +32,15 @@ gtk_sources = files(
 +   'gtkaccellabel.c',
 +   'gtkaccelmap.c',
 +   'gtkaccessible.c',
@@ -387,7 +386,7 @@ index 0000000..934829e
 +   'gtkallocatedbitmask.c',
 +   'gtkappchooser.c',
 +-  'gtkappchooserwidget.c',
-+   'gtkappchooserbutton.c',
++-  'gtkappchooserbutton.c',
 +-  'gtkappchooserdialog.c',
 +   'gtkapplication.c',
 +   'gtkapplicationaccels.c',
@@ -398,7 +397,7 @@ index 0000000..934829e
 +   'gtkbbox.c',
 +   'gtkbin.c',
 +   'gtkbindings.c',
-+@@ -61,7 +56,6 @@ gtk_sources = files(
++@@ -61,7 +55,6 @@ gtk_sources = files(
 +   'gtkbuiltinicon.c',
 +   'gtkbutton.c',
 +   'gtkcairoblur.c',
@@ -406,7 +405,7 @@ index 0000000..934829e
 +   'gtkcellarea.c',
 +   'gtkcellareabox.c',
 +   'gtkcellareaboxcontext.c',
-+@@ -80,11 +74,8 @@ gtk_sources = files(
++@@ -80,10 +73,8 @@ gtk_sources = files(
 +   'gtkcellview.c',
 +   'gtkcheckbutton.c',
 +   'gtkcheckmenuitem.c',
@@ -414,10 +413,9 @@ index 0000000..934829e
 +   'gtkcolorchooser.c',
 +   'gtkcolorchooserwidget.c',
 +-  'gtkcolorchooserdialog.c',
-+-  'gtkcoloreditor.c',
++   'gtkcoloreditor.c',
 +   'gtkcolorpicker.c',
 +   'gtkcolorpickerkwin.c',
-+   'gtkcolorpickerportal.c',
 +@@ -169,8 +160,6 @@ gtk_sources = files(
 +   'gtkdragsource.c',
 +   'gtkdrawingarea.c',
@@ -447,15 +445,7 @@ index 0000000..934829e
 +   'gtkmain.c',
 +   'gtkmagnifier.c',
 +   'gtkmenu.c',
-+@@ -286,7 +271,6 @@ gtk_sources = files(
-+   'gtkradiotoolbutton.c',
-+   'gtkrange.c',
-+   'gtkrbtree.c',
-+-  'gtkrecentchooserdefault.c',
-+   'gtkrecentchooserdialog.c',
-+   'gtkrecentchoosermenu.c',
-+   'gtkrecentchooserwidget.c',
-+@@ -374,7 +358,6 @@ gtk_sources = files(
++@@ -374,7 +359,6 @@ gtk_sources = files(
 +   'gtktreeview.c',
 +   'gtktreeviewcolumn.c',
 +   'gtkutils.c',
@@ -463,14 +453,14 @@ index 0000000..934829e
 +   'gtkviewport.c',
 +   'gtkwidget.c',
 +   'gtkwidgetpath.c',
-+@@ -403,16 +386,12 @@ gtk_gir_public_headers = files(
++@@ -403,16 +387,11 @@ gtk_gir_public_headers = files(
 +   'gtkaccelmap.h',
 +   'gtkaccessible.h',
 +   'gtkactionable.h',
 +-  'gtkactionbar.h',
 +   'gtkadjustment.h',
 +   'gtkappchooser.h',
-+   'gtkappchooserbutton.h',
++-  'gtkappchooserbutton.h',
 +-  'gtkappchooserdialog.h',
 +-  'gtkappchooserwidget.h',
 +   'gtkapplication.h',
@@ -518,15 +508,7 @@ index 0000000..934829e
 +   'gtkmain.h',
 +   'gtkmenu.h',
 +   'gtkmenubar.h',
-+@@ -556,7 +528,6 @@ gtk_gir_public_headers = files(
-+   'gtkscrollable.h',
-+   'gtkscrollbar.h',
-+   'gtkscrolledwindow.h',
-+-  'gtksearchbar.h',
-+   'gtksearchentry.h',
-+   'gtkselection.h',
-+   'gtkseparator.h',
-+@@ -611,7 +582,6 @@ gtk_gir_public_headers = files(
++@@ -611,7 +583,6 @@ gtk_gir_public_headers = files(
 +   'gtktreeviewcolumn.h',
 +   'gtktypes.h',
 +   'gtkviewport.h',
@@ -534,6 +516,14 @@ index 0000000..934829e
 +   'gtkwidget.h',
 +   'gtkwidgetpath.h',
 +   'gtkwindow.h',
++@@ -823,7 +794,6 @@ gtk_gen_headers = [
++ gtk_sources += [
++   gtk_dbus_src,
++   gtk_deprecated_sources,
++-  inspector_sources,
++   a11y_sources,
++   gtkresources,
++   gtkmarshalers,
 diff --git a/ports/gtk3/portfile.cmake b/ports/gtk3/portfile.cmake
 index 52f7e8e..69c8abb 100644
 --- a/ports/gtk3/portfile.cmake

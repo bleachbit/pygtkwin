@@ -4,23 +4,21 @@
 
   "remove_compilation_units": [
     {
-      "_comment": "Widgets with no internal GTK callers. Safe to remove whole .c+.h from the build.",
+      "_comment": "Widgets with no callers anywhere in the remaining GTK build. The generator's validation pass fails regeneration if any still-compiled source references a symbol from a removed file. Deliberately NOT removed (still referenced): gtksearchbar.c (GtkShortcutsWindow help overlay + GtkApplicationWindow), gtkrecentchooserdefault.c (embedded in gtkrecentchooserwidget.c), gtkcoloreditor.c (embedded in gtkcolorchooserwidget.c).",
       "sources": [
         "gtklockbutton.c",
         "gtkvolumebutton.c",
         "gtkcolorbutton.c",
         "gtkcalendar.c",
         "gtkassistant.c",
-        "gtksearchbar.c",
         "gtkactionbar.c",
-        "gtkrecentchooserdefault.c",
-        "gtkcoloreditor.c",
+        "gtkappchooserbutton.c",
+        "gtkappchooserdialog.c",
+        "gtkappchooserwidget.c",
         "gtkfontbutton.c",
         "gtkfontchooserwidget.c",
         "gtkfontchooserdialog.c",
-        "gtkcolorchooserdialog.c",
-        "gtkappchooserdialog.c",
-        "gtkappchooserwidget.c"
+        "gtkcolorchooserdialog.c"
       ],
       "headers": [
         "gtklockbutton.h",
@@ -28,14 +26,14 @@
         "gtkcolorbutton.h",
         "gtkcalendar.h",
         "gtkassistant.h",
-        "gtksearchbar.h",
         "gtkactionbar.h",
-        "gtkcolorchooserdialog.h",
+        "gtkappchooserbutton.h",
+        "gtkappchooserdialog.h",
+        "gtkappchooserwidget.h",
         "gtkfontbutton.h",
         "gtkfontchooserdialog.h",
         "gtkfontchooserwidget.h",
-        "gtkappchooserdialog.h",
-        "gtkappchooserwidget.h"
+        "gtkcolorchooserdialog.h"
       ],
       "a11y_sources": [
         "gtklockbuttonaccessible.c"
@@ -115,10 +113,12 @@
 
   "stub_inspector_debugging": true,
 
+  "remove_inspector_sources": true,
+
   "meson_options": {
     "_comment": "Added to vcpkg portfile.cmake meson configure step.",
     "print_backends": "file",
     "b_lto": true
-  },
+  }
 
 }

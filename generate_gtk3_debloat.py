@@ -8,9 +8,12 @@ Usage:
 This script:
   1. Downloads and extracts the GTK3 source tarball.
   2. Applies all debloat changes described in gtk3-debloat.json.
-  3. Generates a git diff (the GTK source patch).
-  4. Creates the vcpkg portfile patch (adds the source patch + meson options).
-  5. Writes the combined patch to 0003-vcpkg-gtk3-debloat.patch.
+  3. Validates that no still-compiled source references a removed symbol,
+     and that the vcpkg portfile patch is generated against the same vcpkg
+     commit the CI workflow pins.
+  4. Generates a git diff (the GTK source patch).
+  5. Creates the vcpkg portfile patch (adds the source patch + meson options).
+  6. Writes the combined patch to 0003-vcpkg-gtk3-debloat.patch.
 
 The generated patch is committed to the repo and applied at build time.
 To update the debloat configuration, edit gtk3-debloat.json and re-run this script.
@@ -28,6 +31,39 @@ import urllib.request
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 JSON_PATH = os.path.join(SCRIPT_DIR, "gtk3-debloat.json")
 OUTPUT_PATCH = os.path.join(SCRIPT_DIR, "0003-vcpkg-gtk3-debloat.patch")
+WORKFLOW_PATH = os.path.join(SCRIPT_DIR, ".github", "workflows", "build-pygtk.yaml")
+
+# Fallback only: the pinned vcpkg commit is normally read from the CI workflow.
+DEFAULT_VCPKG_COMMIT = "99a97de2cb371449d4fb9dc970f2ac562d689ec2"
+VCPKG_COMMIT_RE = re.compile(r"VCPKG_COMMIT:\s*'([0-9a-f]{40})'")
+
+WARNINGS = []
+
+
+def warn(msg):
+    """Record a non-fatal issue; any warning aborts the run before patching."""
+    print(f"  WARNING: {msg}")
+    WARNINGS.append(msg)
+
+
+def get_vcpkg_commit():
+    """Return the pinned vcpkg commit, read from the CI workflow.
+
+    The generator must build the portfile patch against the same vcpkg commit
+    that CI checks out, so the workflow is the single source of truth.
+    """
+    try:
+        with open(WORKFLOW_PATH, 'r') as f:
+            content = f.read()
+        m = VCPKG_COMMIT_RE.search(content)
+        if m:
+            return m.group(1)
+        warn(f"no VCPKG_COMMIT found in {WORKFLOW_PATH}; "
+             f"falling back to {DEFAULT_VCPKG_COMMIT}")
+    except OSError as e:
+        warn(f"cannot read {WORKFLOW_PATH}: {e}; "
+             f"falling back to {DEFAULT_VCPKG_COMMIT}")
+    return DEFAULT_VCPKG_COMMIT
 
 
 def run(cmd, cwd=None, check=True):
@@ -56,12 +92,12 @@ def download_and_extract_gtk(version, work_dir):
 def init_git_repo(src_dir):
     """Initialize a git repo in the source dir so we can diff."""
     run(["git", "init"], cwd=src_dir)
+    # Set author before the first commit so it works without global git config
+    run(["git", "config", "user.email", "debloat@local"], cwd=src_dir)
+    run(["git", "config", "user.name", "Debloat"], cwd=src_dir)
     run(["git", "add", "-A"], cwd=src_dir)
     run(["git", "commit", "-m", "gtk upstream", "--quiet",
          "--allow-empty"], cwd=src_dir)
-    # Set author so diff doesn't show author warnings
-    run(["git", "config", "user.email", "debloat@local"], cwd=src_dir)
-    run(["git", "config", "user.name", "Debloat"], cwd=src_dir)
 
 
 def remove_line_from_file(file_path, line_content):
@@ -70,7 +106,7 @@ def remove_line_from_file(file_path, line_content):
         lines = f.readlines()
     new_lines = [l for l in lines if line_content not in l]
     if len(new_lines) == len(lines):
-        print(f"  WARNING: '{line_content}' not found in {file_path}")
+        warn(f"'{line_content}' not found in {file_path}")
     with open(file_path, 'w') as f:
         f.writelines(new_lines)
 
@@ -82,7 +118,7 @@ def remove_lines_matching(file_path, patterns):
     new_lines = [l for l in lines if not any(p in l for p in patterns)]
     removed = len(lines) - len(new_lines)
     if removed == 0:
-        print(f"  WARNING: no matches for {patterns} in {file_path}")
+        warn(f"no matches for {patterns} in {file_path}")
     with open(file_path, 'w') as f:
         f.writelines(new_lines)
 
@@ -104,7 +140,7 @@ def stub_function(file_path, function_name, replacement_body):
 
     match = re.search(pattern, content)
     if not match:
-        print(f"  WARNING: function '{function_name}' not found in {file_path}")
+        warn(f"function '{function_name}' not found in {file_path}")
         return
 
     # Find the matching closing brace
@@ -121,7 +157,7 @@ def stub_function(file_path, function_name, replacement_body):
         i += 1
 
     if depth != 0:
-        print(f"  WARNING: unbalanced braces for '{function_name}' in {file_path}")
+        warn(f"unbalanced braces for '{function_name}' in {file_path}")
         return
 
     # Replace the function body
@@ -138,7 +174,7 @@ def replace_in_file(file_path, old, new):
     with open(file_path, 'r') as f:
         content = f.read()
     if old not in content:
-        print(f"  WARNING: '{old}' not found in {file_path}")
+        warn(f"'{old}' not found in {file_path}")
         return
     content = content.replace(old, new)
     with open(file_path, 'w') as f:
@@ -220,6 +256,134 @@ def apply_inspector_stub(gtk_dir):
 }""")
 
 
+def apply_inspector_source_removal(gtk_dir):
+    """Drop the gtk/inspector/ subdir from the build entirely.
+
+    The inspector is only reachable through gtk_window_set_debugging(), which
+    is stubbed, and through gtk_inspector_window_rescan() in the idle helper
+    update_debugging(); both references are removed here.
+    """
+    meson_build = os.path.join(gtk_dir, "gtk", "meson.build")
+    remove_line_from_file(meson_build, "subdir('inspector')")
+    remove_line_from_file(meson_build, "inspector_sources,")
+
+    file_path = os.path.join(gtk_dir, "gtk", "gtkwindow.c")
+    remove_line_from_file(file_path, "gtk_inspector_window_rescan (")
+
+
+# Symbols referenced from still-compiled sources would fail the link, so the
+# generator refuses to emit a patch that leaves any behind.
+FUNC_DEF_RE = re.compile(r"^([a-z_][a-z0-9_]*)\s*\(")
+G_DEFINE_TYPE_RE = re.compile(
+    r"G_DEFINE_TYPE(?:_WITH_PRIVATE|_WITH_CODE)?\s*\(\s*"
+    r"(Gtk[A-Za-z0-9_]+)\s*,\s*([a-z_][a-z0-9_]*)\s*,")
+COMMENT_START_RE = re.compile(r"^\s*(?:\*|//|/\*)")
+
+
+def camel_to_upper_snake(name):
+    """GtkSearchBar -> GTK_SEARCH_BAR"""
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).upper()
+
+
+def extract_removed_symbols(c_path):
+    """Return (functions, type macros) defined by a to-be-removed .c file.
+
+    Functions are top-level definitions whose name starts with gtk_ or _gtk_
+    (GTK style puts the name at column 0).  G_DEFINE_TYPE additionally
+    produces a *_get_type() function and a family of GTK_TYPE_X / GTK_IS_X /
+    GTK_X cast macros.
+    """
+    functions, macros = set(), set()
+    with open(c_path, 'r', errors='replace') as f:
+        for line in f:
+            m = G_DEFINE_TYPE_RE.search(line)
+            if m:
+                type_name, prefix = m.group(1), m.group(2)
+                functions.add(f"{prefix}_get_type")
+                macros.add("GTK_" + camel_to_upper_snake(type_name))
+                continue
+            m = FUNC_DEF_RE.match(line)
+            if m and (m.group(1).startswith("gtk_")
+                      or m.group(1).startswith("_gtk_")):
+                functions.add(m.group(1))
+    return functions, macros
+
+
+def validate_no_dangling_references(gtk_dir, config):
+    """Fail if any still-compiled .c file references a removed symbol."""
+    removed = set()
+    for unit in config.get("remove_compilation_units", []):
+        removed.update(unit.get("sources", []))
+        removed.update(unit.get("a11y_sources", []))
+    for stub_config in config.get("stub_callers", []):
+        removed.update(stub_config.get("sources_to_remove", []))
+
+    gtk_subdir = os.path.join(gtk_dir, "gtk")
+    removed_paths = set()
+    for rel in removed:
+        for base in (gtk_subdir, os.path.join(gtk_subdir, "a11y")):
+            candidate = os.path.join(base, rel)
+            if os.path.exists(candidate):
+                removed_paths.add(os.path.normpath(candidate))
+                break
+        else:
+            warn(f"removed source file not found: {rel}")
+
+    functions, macros = set(), set()
+    for path in removed_paths:
+        f, m = extract_removed_symbols(path)
+        functions.update(f)
+        macros.update(m)
+
+    skip_inspector = config.get("remove_inspector_sources", False)
+    errors = []
+    for root, dirs, files in os.walk(gtk_subdir):
+        if skip_inspector and os.path.basename(root) == "inspector":
+            dirs[:] = []
+            continue
+        for fn in files:
+            if not fn.endswith(".c"):
+                continue
+            path = os.path.join(root, fn)
+            if os.path.normpath(path) in removed_paths:
+                continue
+            with open(path, 'r', errors='replace') as f:
+                for i, line in enumerate(f, 1):
+                    if COMMENT_START_RE.match(line):
+                        continue
+                    for sym in functions:
+                        if re.search(rf"\b{re.escape(sym)}\s*\(", line):
+                            errors.append(
+                                f"{os.path.relpath(path, gtk_subdir)}:{i}: "
+                                f"references removed {sym}()")
+                    for mac in macros:
+                        if re.search(rf"\b{re.escape(mac)}\b", line):
+                            errors.append(
+                                f"{os.path.relpath(path, gtk_subdir)}:{i}: "
+                                f"references removed {mac}")
+
+    if skip_inspector:
+        for root, dirs, files in os.walk(gtk_subdir):
+            if os.path.basename(root) == "inspector":
+                continue
+            for fn in files:
+                if not fn.endswith(".c"):
+                    continue
+                path = os.path.join(root, fn)
+                with open(path, 'r', errors='replace') as f:
+                    for i, line in enumerate(f, 1):
+                        if re.search(r"\bgtk_inspector_[a-z_]+\s*\(", line):
+                            errors.append(
+                                f"{os.path.relpath(path, gtk_subdir)}:{i}: "
+                                f"references removed inspector entry point")
+
+    if errors:
+        print("ERROR: dangling references to removed sources:", file=sys.stderr)
+        for e in errors:
+            print(f"  {e}", file=sys.stderr)
+        sys.exit(1)
+
+
 def apply_debloat(gtk_dir, config):
     """Apply all debloat changes to the GTK source tree."""
     gtk_subdir = os.path.join(gtk_dir, "gtk")
@@ -284,6 +448,15 @@ def apply_debloat(gtk_dir, config):
         print("Stubbing inspector debugging...")
         apply_inspector_stub(gtk_dir)
 
+    # --- Remove inspector sources from the build ---
+    if config.get("remove_inspector_sources"):
+        print("Removing inspector sources...")
+        apply_inspector_source_removal(gtk_dir)
+
+    # --- Validate: no still-compiled source may reference a removed symbol ---
+    print("Validating no dangling references...")
+    validate_no_dangling_references(gtk_dir, config)
+
 
 def generate_gtk_source_patch(gtk_dir):
     """Generate a git diff of the changes."""
@@ -292,11 +465,14 @@ def generate_gtk_source_patch(gtk_dir):
     return diff.stdout
 
 
-def generate_vcpkg_portfile_patch(config, gtk_source_patch, work_dir):
+def generate_vcpkg_portfile_patch(config, gtk_source_patch, work_dir,
+                                  vcpkg_commit):
     """Generate the vcpkg patch that includes the GTK source patch + portfile changes.
 
     Creates a temporary vcpkg-like directory structure, modifies the portfile,
-    and uses git diff to produce a correct patch.
+    and uses git diff to produce a correct patch.  The portfile is fetched
+    from the vcpkg commit pinned by the CI workflow, so the generated patch
+    always applies to what CI checks out.
     """
     meson_options = config.get("meson_options", {})
 
@@ -305,9 +481,9 @@ def generate_vcpkg_portfile_patch(config, gtk_source_patch, work_dir):
     port_dir = os.path.join(vcpkg_temp, "ports", "gtk3")
     os.makedirs(port_dir)
 
-    # Copy the original portfile.cmake from the vcpkg commit
-    # We need to fetch it - use the vcpkg-verify checkout if available, or download
-    vcpkg_portfile_url = "https://raw.githubusercontent.com/microsoft/vcpkg/99a97de2cb371449d4fb9dc970f2ac562d689ec2/ports/gtk3/portfile.cmake"
+    # Fetch the original portfile.cmake from the pinned vcpkg commit
+    vcpkg_portfile_url = (f"https://raw.githubusercontent.com/microsoft/vcpkg/"
+                          f"{vcpkg_commit}/ports/gtk3/portfile.cmake")
     portfile_path = os.path.join(port_dir, "portfile.cmake")
     print("Downloading original portfile.cmake...")
     urllib.request.urlretrieve(vcpkg_portfile_url, portfile_path)
@@ -391,6 +567,13 @@ def main():
         # Apply all debloat changes
         apply_debloat(gtk_dir, config)
 
+        # Any warning during application means the patch would be silently
+        # incomplete, so refuse to emit it.
+        if WARNINGS:
+            print("\nERROR: aborted due to the warnings above; fix the "
+                  "configuration before regenerating.", file=sys.stderr)
+            sys.exit(1)
+
         # Generate the GTK source patch
         print("Generating GTK source patch...")
         gtk_source_patch = generate_gtk_source_patch(gtk_dir)
@@ -401,7 +584,9 @@ def main():
 
         # Generate the combined vcpkg patch
         print("Generating vcpkg patch...")
-        vcpkg_patch = generate_vcpkg_portfile_patch(config, gtk_source_patch, work_dir)
+        vcpkg_commit = get_vcpkg_commit()
+        vcpkg_patch = generate_vcpkg_portfile_patch(
+            config, gtk_source_patch, work_dir, vcpkg_commit)
 
         # Write the output patch
         with open(OUTPUT_PATCH, 'w') as f:
