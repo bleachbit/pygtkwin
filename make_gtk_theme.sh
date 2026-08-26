@@ -17,8 +17,8 @@ download_and_extract() {
     rm "$filename"
 }
 
-ADAWAITA_VERSION=47.0
-ADAWAITA_URL="https://download.gnome.org/sources/adwaita-icon-theme/47/adwaita-icon-theme-${ADAWAITA_VERSION}.tar.xz"
+ADAWAITA_VERSION=50.0
+ADAWAITA_URL="https://download.gnome.org/sources/adwaita-icon-theme/50/adwaita-icon-theme-${ADAWAITA_VERSION}.tar.xz"
 download_and_extract $ADAWAITA_URL
 mkdir -p gtk-themes/share/icons
 mv adwaita-icon-theme-${ADAWAITA_VERSION}/Adwaita gtk-themes/share/icons
@@ -33,7 +33,7 @@ mv adwaita-icon-theme-legacy-${ADAWAITA_LEGACY_VERSION}/AdwaitaLegacy gtk-themes
 cp adwaita-icon-theme-legacy-${ADAWAITA_LEGACY_VERSION}/index.theme gtk-themes/share/icons/AdwaitaLegacy/index.theme
 
 # hicolor is the ultimate fallback icon theme.
-HICOLOR_VERSION=0.17
+HICOLOR_VERSION=0.18
 HICOLOR_URL="https://icon-theme.freedesktop.org/releases/hicolor-icon-theme-${HICOLOR_VERSION}.tar.xz"
 download_and_extract $HICOLOR_URL
 mkdir -p gtk-themes/share/icons/hicolor
