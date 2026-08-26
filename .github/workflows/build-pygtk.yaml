@@ -159,7 +159,7 @@ jobs:
       - name: Download and extract PyGObject source
         shell: bash
         run: |
-          curl -L https://download.gnome.org/sources/pygobject/3.56/pygobject-${{ env.PYGOBJECT_VERSION }}.tar.gz -o pygobject.tar.gz
+          curl -fL https://download.gnome.org/sources/pygobject/3.56/pygobject-${{ env.PYGOBJECT_VERSION }}.tar.gz -o pygobject.tar.gz
           certutil -hashfile pygobject.tar.gz SHA256
           echo "${{ env.PYGOBJECT_SHA256 }} pygobject.tar.gz" | sha256sum -c || exit 1
           tar xf pygobject.tar.gz
