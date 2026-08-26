@@ -20,6 +20,19 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y sassc wget p7zip-full
 
+      - name: Install oxipng
+        run: |
+          OXIPNG_VER=10.1.1
+          OXIPNG_SHA256=a7e13e06040dea5fe1298668ac99afbe0ed781610a9e4b27d62a8850b3fdf273
+          curl -fsSL "https://github.com/oxipng/oxipng/releases/download/v${OXIPNG_VER}/oxipng-${OXIPNG_VER}-x86_64-unknown-linux-musl.tar.gz" -o oxipng.tar.gz
+          echo "${OXIPNG_SHA256}  oxipng.tar.gz" | sha256sum -c -
+          tar -xzf oxipng.tar.gz
+          sudo install -m 0755 "oxipng-${OXIPNG_VER}-x86_64-unknown-linux-musl/oxipng" /usr/local/bin/oxipng
+          oxipng --version
+
+      - name: Install svgo
+        run: npm install -g svgo@3.3.4 && svgo --version
+
       - name: Build GTK themes
         run: bash make_gtk_theme.sh
 

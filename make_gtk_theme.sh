@@ -76,6 +76,44 @@ rm gnome-themes-extra-${GNOME_THEMES_VER}/themes/HighContrast/icons/scalable/Mak
 mv gnome-themes-extra-${GNOME_THEMES_VER}/themes/HighContrast/icons/scalable gtk-themes/share/icons/HighContrast
 cp gnome-themes-extra-${GNOME_THEMES_VER}/themes/HighContrast/icons/index.theme gtk-themes/share/icons/HighContrast/index.theme
 
+# Optimize PNG and SVG assets to shrink the final archive.
+# oxipng losslessly recompresses PNGs; svgo strips redundancy from SVGs.
+# Both run in place. They are timed and the total size delta is printed so
+# the size/time tradeoff is visible in the build log.
+command -v oxipng >/dev/null 2>&1 || { echo "Error: oxipng not found; install it to optimize PNGs"; exit 1; }
+command -v svgo   >/dev/null 2>&1 || { echo "Error: svgo not found; install it to optimize SVGs"; exit 1; }
+
+# Sum of byte sizes of all regular files under $1 matching name glob $2.
+total_bytes() {
+    find "$1" -type f -name "$2" -printf '%s\n' | awk '{s+=$1} END {print s+0}'
+}
+
+# Print "label: before -> after bytes (saved, pct%)".
+print_savings() {
+    local label="$1" before="$2" after="$3" saved pct
+    saved=$(( before - after ))
+    if [ "$before" -gt 0 ]; then
+        pct=$(awk -v s="$saved" -v b="$before" 'BEGIN{printf "%.2f", s*100/b}')
+    else
+        pct="0.00"
+    fi
+    echo "$label: $before -> $after bytes ($saved saved, ${pct}%)"
+}
+
+echo "==> Optimizing PNG files with oxipng"
+png_before=$(total_bytes gtk-themes '*.png')
+time find gtk-themes -type f -name '*.png' -print0 \
+    | xargs -r -0 oxipng -q -o 4 --strip safe --alpha
+png_after=$(total_bytes gtk-themes '*.png')
+print_savings "PNG" "$png_before" "$png_after"
+
+echo "==> Optimizing SVG files with svgo"
+svg_before=$(total_bytes gtk-themes '*.svg')
+time find gtk-themes -type f -name '*.svg' -print0 \
+    | xargs -r -0 svgo --multipass --quiet
+svg_after=$(total_bytes gtk-themes '*.svg')
+print_savings "SVG" "$svg_before" "$svg_after"
+
 7za a -tzip -mx=9 -mfb=258 -mpass=15 "$current_dir/gtk-themes.zip" gtk-themes
 du -b "$current_dir/gtk-themes.zip"
 sha256sum "$current_dir/gtk-themes.zip"
