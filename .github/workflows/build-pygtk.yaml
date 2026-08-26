@@ -27,13 +27,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up pygtkwin environment
         uses: ./actions/pygtkwin-env
 
       - name: Cache vcpkg binary cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ~/.cache/vcpkg/archives
@@ -107,7 +107,7 @@ jobs:
           :: pip is not installed
 
       - name: Upload the build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ env.GTK_BUILD_NAME }}
           path: ${{ env.GTK_BUILD_NAME }}.zip
@@ -116,7 +116,7 @@ jobs:
       # Create GitHub Release when a tag is pushed
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: ${{ env.GTK_BUILD_NAME }}.zip
           generate_release_notes: true
@@ -132,13 +132,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up pygtkwin environment
         uses: ./actions/pygtkwin-env
 
       - name: Download PyGTK artifacts
-        uses: dawidd6/action-download-artifact@v4
+        uses: dawidd6/action-download-artifact@854e2de9396304899dbe03bf9995fd73533190d1 # v4
         with:
           name: ${{ env.GTK_BUILD_NAME }}
           run_id: ${{ github.run_id }}
@@ -222,7 +222,7 @@ jobs:
           exit /b 0
 
       - name: Upload wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pygobject-wheel
           path: ${{ env.PYGOBJECT_WHL}}
@@ -231,7 +231,7 @@ jobs:
       # Release when a tag is pushed
       - name: Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: ${{ env.PYGOBJECT_WHL}}
           generate_release_notes: false
