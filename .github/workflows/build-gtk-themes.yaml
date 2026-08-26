@@ -34,7 +34,8 @@ jobs:
           oxipng --version
 
       - name: Install svgo
-        run: npm install -g svgo@3.3.4 && svgo --version
+        # Ignore scripts to avoid potential security issues.
+        run: npm install -g --ignore-scripts svgo@3.3.4 && svgo --version
 
       - name: Build GTK themes
         run: bash make_gtk_theme.sh
