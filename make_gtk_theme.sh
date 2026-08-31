@@ -102,8 +102,7 @@ print_savings() {
 
 echo "==> Optimizing PNG files with oxipng"
 png_before=$(total_bytes gtk-themes '*.png')
-time find gtk-themes -type f -name '*.png' -print0 \
-    | xargs -r -0 oxipng -q -o 6 --strip safe --alpha
+time oxipng --opt max --strip safe --alpha --fix --preserve -r gtk-themes
 png_after=$(total_bytes gtk-themes '*.png')
 print_savings "PNG" "$png_before" "$png_after"
 
