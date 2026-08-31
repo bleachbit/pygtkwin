@@ -25,8 +25,8 @@ jobs:
 
       - name: Install oxipng
         run: |
-          OXIPNG_VER=10.1.1
-          OXIPNG_SHA256=a7e13e06040dea5fe1298668ac99afbe0ed781610a9e4b27d62a8850b3fdf273
+          OXIPNG_VER=10.2.0
+          OXIPNG_SHA256=a27ecb29faab9da1549f4a243bab12f1e43e4ed8ae6a2a2186a543dc9ffd3956
           curl -fsSL "https://github.com/oxipng/oxipng/releases/download/v${OXIPNG_VER}/oxipng-${OXIPNG_VER}-x86_64-unknown-linux-musl.tar.gz" -o oxipng.tar.gz
           echo "${OXIPNG_SHA256}  oxipng.tar.gz" | sha256sum -c -
           tar -xzf oxipng.tar.gz
