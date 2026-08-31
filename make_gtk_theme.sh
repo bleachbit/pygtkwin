@@ -100,11 +100,20 @@ print_savings() {
     echo "$label: $before -> $after bytes ($saved saved, ${pct}%)"
 }
 
+# Without Zopfli option, oxipng runs quickly.
 echo "==> Optimizing PNG files with oxipng"
 png_before=$(total_bytes gtk-themes '*.png')
 time oxipng --opt max --strip safe --alpha --fix --preserve -r gtk-themes
 png_after=$(total_bytes gtk-themes '*.png')
 print_savings "PNG" "$png_before" "$png_after"
+
+# The oxipng Zopfli option is much slower but further shrinks the
+# images.
+echo "==> Re-compressing PNGs with oxipng Zopfli (-z --fast)"
+png_zopfli_before=$(total_bytes gtk-themes '*.png')
+time oxipng --opt max --strip safe --alpha --fix --preserve -z --fast -r gtk-themes
+png_zopfli_after=$(total_bytes gtk-themes '*.png')
+print_savings "PNG (zopfli)" "$png_zopfli_before" "$png_zopfli_after"
 
 echo "==> Optimizing SVG files with svgo"
 svg_before=$(total_bytes gtk-themes '*.svg')
