@@ -11,7 +11,7 @@
 # g-ir-compiler (already installed by the gobject-introspection port).
 #
 # We also post-process GLib-2.0.gir and Gio-2.0.gir to remove duplicate
-# symbols from the platform-specific GIRs.  Without this, PyGObject 3.56.3
+# symbols from the platform-specific GIRs.  Without this, PyGObject 3.58.0
 # emits "Name conflict for platform-specific symbol" warnings (pygobject
 # bug #760).
 #

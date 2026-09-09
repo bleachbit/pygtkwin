@@ -8,7 +8,7 @@ use Microsoft Visual C++ and vcpkg instead of gcc and MSYS2.
 As of 2026-09-09, this project builds:
 * Python 3.12.13
 * GTK 3.24.52
-* PyGObject 3.56.3
+* PyGObject 3.58.0
 * Cairo 1.18.4
 * Pango 1.58.0
 * Fontconfig 2.17.1
