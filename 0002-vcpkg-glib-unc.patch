@@ -1,6 +1,6 @@
 diff --git a/ports/glib/0001-unc-helper.patch b/ports/glib/0001-unc-helper.patch
 new file mode 100644
-index 0000000..ae34aac
+index 000000000..ae34aacdd
 --- /dev/null
 +++ b/ports/glib/0001-unc-helper.patch
 @@ -0,0 +1,115 @@
@@ -120,7 +120,7 @@ index 0000000..ae34aac
 +   if (executable_path == NULL)
 +     {
 diff --git a/ports/glib/portfile.cmake b/ports/glib/portfile.cmake
-index fe8c55e..2f6ff58 100644
+index 0eb6c200a..3b7f064cb 100644
 --- a/ports/glib/portfile.cmake
 +++ b/ports/glib/portfile.cmake
 @@ -18,6 +18,7 @@ vcpkg_extract_source_archive(SOURCE_PATH
@@ -132,7 +132,7 @@ index fe8c55e..2f6ff58 100644
  
  set(LANGUAGES C CXX)
 diff --git a/ports/glib/vcpkg.json b/ports/glib/vcpkg.json
-index 2d680e6..61f86df 100644
+index cc779747b..7292d7cde 100644
 --- a/ports/glib/vcpkg.json
 +++ b/ports/glib/vcpkg.json
 @@ -37,5 +37,6 @@
@@ -144,30 +144,30 @@ index 2d680e6..61f86df 100644
 +  "port-version": 1
  }
 diff --git a/versions/baseline.json b/versions/baseline.json
-index beac9fc..8c9f978 100644
+index 5906fbbe0..0a4335f4b 100644
 --- a/versions/baseline.json
 +++ b/versions/baseline.json
-@@ -3450,7 +3450,7 @@
+@@ -3494,7 +3494,7 @@
      },
      "glib": {
-       "baseline": "2.88.0",
+       "baseline": "2.88.3",
 -      "port-version": 0
 +      "port-version": 1
      },
      "glib-networking": {
        "baseline": "2.80.1",
 diff --git a/versions/g-/glib.json b/versions/g-/glib.json
-index 99b712a..76b412f 100644
+index 1ae9152d4..2c234cd29 100644
 --- a/versions/g-/glib.json
 +++ b/versions/g-/glib.json
 @@ -1,5 +1,10 @@
  {
    "versions": [
 +    {
-+      "git-tree": "42352b4459d7afd23bda5d35927f5ee3bbd5f76b",
-+      "version": "2.88.0",
++      "git-tree": "4fc97cb64b70efbff8f128ecc616b425727c96a4",
++      "version": "2.88.3",
 +      "port-version": 1
 +    },
      {
-       "git-tree": "84c530f543d52372516f5234f2f0ff4a2c2bfe83",
-       "version": "2.88.0",
+       "git-tree": "55b8805164a1d87ad844e59e7f49221a7a97b6ba",
+       "version": "2.88.3",

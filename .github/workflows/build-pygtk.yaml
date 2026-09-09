@@ -26,7 +26,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      VCPKG_COMMIT: '99a97de2cb371449d4fb9dc970f2ac562d689ec2'
+      VCPKG_COMMIT: '7ece2c79b95131924820fb67c977abb3c4602724'
 
     steps:
       - name: Checkout code

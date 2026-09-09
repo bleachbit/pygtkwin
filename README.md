@@ -5,13 +5,14 @@ to use on Microsoft Windows. This includes introspection support
 and a PyGObject wheel. Consistent with PyPI packaging practices, we
 use Microsoft Visual C++ and vcpkg instead of gcc and MSYS2.
 
-As of 2026-05-10, this project builds:
+As of 2026-09-09, this project builds:
 * Python 3.12.13
 * GTK 3.24.52
 * PyGObject 3.56.3
-* Pango 1.57.1
+* Cairo 1.18.4
+* Pango 1.58.0
 * Fontconfig 2.17.1
-* HarfBuzz 14.2.0
+* HarfBuzz 14.4.0
 
 The build environment is GitHub Actions with MSVC++ 2022.
 For more information about the build environment and build
@@ -24,7 +25,7 @@ run GTK on Windows, try this repository plus the
 [install script](https://github.com/bleachbit/bleachbit/blob/master/windows/python-gtk3-install.ps1)
 from the BleachBit repository.
 
-Copyright (C) 2025 by Andrew Ziem. All rights reserved.
+Copyright (C) 2025 to 2026 by Andrew Ziem. All rights reserved.
 See [LICENSE](LICENSE) for license information.
 
 Special thanks to @soylent-io and @soreau for their work to keep BleachBit
