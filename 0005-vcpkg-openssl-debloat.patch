@@ -1,7 +1,7 @@
 diff --git a/ports/openssl/portfile.cmake b/ports/openssl/portfile.cmake
 --- a/ports/openssl/portfile.cmake
 +++ b/ports/openssl/portfile.cmake
-@@ -30,4 +30,41 @@
+@@ -30,4 +30,43 @@
      enable-capieng
      no-tests
      no-docs
@@ -30,7 +30,9 @@ diff --git a/ports/openssl/portfile.cmake b/ports/openssl/portfile.cmake
 +    no-sm4
 +    no-rmd160
 +    no-whirlpool
-+    no-scrypt
++    # scrypt must stay: CPython's _hashopenssl.c unconditionally defines
++    # PY_OPENSSL_HAS_SCRYPT and references EVP_PBE_scrypt, so no-scrypt
++    # breaks the python3 _hashlib link.
 +    no-rc2
 +    no-rc4
 +    no-ec2m
