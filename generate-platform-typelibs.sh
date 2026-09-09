@@ -47,6 +47,19 @@ echo "=== Generating platform-specific typelibs ==="
 # Find a usable python (python3 on Linux/macOS, python on Windows Git Bash).
 # Honors PYTHON env var for when neither is on PATH (e.g. local Windows builds).
 python_bin="${PYTHON:-$(command -v python3 || command -v python || true)}"
+
+# The pygtkwin-env GitHub Action sets PYTHON to a Windows-style path with
+# backslashes (e.g. D:\a\...\python.exe) because the cmd/pwsh steps need it
+# in that form.  bash cannot execute such a path directly (the backslashes
+# are treated as literal characters, not separators), so convert it to a
+# Unix path via cygpath.  cygpath only exists under Git Bash / MSYS; on
+# Linux/macOS PYTHON is already a Unix path and cygpath is absent, so the
+# conversion is skipped there.
+if [ -n "$python_bin" ] && command -v cygpath >/dev/null 2>&1 \
+    && [[ "$python_bin" == *\\* || "$python_bin" == ?:* ]]; then
+    python_bin="$(cygpath -u "$python_bin")"
+fi
+
 if [ -z "$python_bin" ]; then
     echo "ERROR: neither python3 nor python found on PATH (set PYTHON env var)" >&2
     exit 1
