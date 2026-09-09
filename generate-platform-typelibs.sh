@@ -44,24 +44,40 @@ fi
 
 echo "=== Generating platform-specific typelibs ==="
 
-# Find a usable python (python3 on Linux/macOS, python on Windows Git Bash).
-# Honors PYTHON env var for when neither is on PATH (e.g. local Windows builds).
-python_bin="${PYTHON:-$(command -v python3 || command -v python || true)}"
+# Find a usable python.  Prefer the one bundled inside the triplet dir
+# (always present in CI, where vcpkg just installed it), then python3/python
+# on PATH, then the PYTHON env var (for local builds where python isn't on
+# PATH).
+#
+# Note: the pygtkwin-env GitHub Action sets PYTHON to a Windows-style path
+# under vcpkg_installed/<triplet>/... , but this script runs BEFORE the
+# "Prepare for packing" step that copies vcpkg/installed -> vcpkg_installed,
+# so PYTHON points at a directory that does not exist yet.  Deriving python
+# from the triplet dir we were handed avoids that mismatch.
+python_bin=""
+for candidate in \
+    "$dir/tools/python3/python.exe" \
+    "$dir/tools/python3/bin/python3" \
+    "$(command -v python3 || true)" \
+    "$(command -v python || true)"; do
+    [ -n "$candidate" ] && [ -f "$candidate" ] && { python_bin="$candidate"; break; }
+done
 
-# The pygtkwin-env GitHub Action sets PYTHON to a Windows-style path with
-# backslashes (e.g. D:\a\...\python.exe) because the cmd/pwsh steps need it
-# in that form.  bash cannot execute such a path directly (the backslashes
-# are treated as literal characters, not separators), so convert it to a
-# Unix path via cygpath.  cygpath only exists under Git Bash / MSYS; on
-# Linux/macOS PYTHON is already a Unix path and cygpath is absent, so the
-# conversion is skipped there.
-if [ -n "$python_bin" ] && command -v cygpath >/dev/null 2>&1 \
-    && [[ "$python_bin" == *\\* || "$python_bin" == ?:* ]]; then
-    python_bin="$(cygpath -u "$python_bin")"
+# PYTHON env var fallback (e.g. local Windows builds where python isn't on
+# PATH).  The pygtkwin-env Action sets it to a Windows-style path with
+# backslashes, which bash cannot execute directly; convert it to a Unix
+# path via cygpath (Git Bash / MSYS only).  On Linux/macOS PYTHON is already
+# a Unix path and cygpath is absent, so it is used as-is.
+if [ -z "$python_bin" ] && [ -n "${PYTHON:-}" ]; then
+    if command -v cygpath >/dev/null 2>&1; then
+        python_bin="$(cygpath -u "$PYTHON")"
+    else
+        python_bin="$PYTHON"
+    fi
 fi
 
-if [ -z "$python_bin" ]; then
-    echo "ERROR: neither python3 nor python found on PATH (set PYTHON env var)" >&2
+if [ -z "$python_bin" ] || [ ! -f "$python_bin" ]; then
+    echo "ERROR: python not found (pass a triplet dir containing tools/python3, set PYTHON env var, or put python3 on PATH)" >&2
     exit 1
 fi
 
