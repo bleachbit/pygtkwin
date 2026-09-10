@@ -43,6 +43,40 @@ check_glob 'GioWin32-2.0.typelib'  'GioWin32 typelib'    'lib/girepository-1.0'
 
 echo "=== Validation complete: $errors error(s) ==="
 
+# Print debloat metrics: sizes of key DLLs and the bin directory total.
+# Output is grep-friendly (key=value) so build logs can be diffed to track
+# the effectiveness of the GTK/openssl debloat patches over time.
+print_metric() {
+    # $1 = metric name, $2 = file path (relative to $dir), $3 = absolute path
+    local name="$1" rel="$2" f="$3"
+    if [ -f "$f" ]; then
+        local bytes human
+        bytes=$(stat -c '%s' "$f")
+        human=$(numfmt --to=iec --suffix=B "$bytes" 2>/dev/null || echo "${bytes}B")
+        printf 'metric %s=%s bytes=%s file=%s\n' "$name" "$human" "$bytes" "$rel"
+    else
+        printf 'metric %s=MISSING file=%s\n' "$name" "$rel"
+    fi
+}
+
+echo "=== Debloat metrics ==="
+# gtk-3 DLL is the main GTK debloat target (e.g. gtk-3-vs17.dll).
+gtk_dll=$(find "$bindir" -maxdepth 1 -name 'gtk-3-*.dll' -type f | head -n1)
+print_metric 'gtk3_dll' "${gtk_dll#$dir/}" "$gtk_dll"
+# openssl DLL is the openssl debloat target (0005-vcpkg-openssl-debloat.patch).
+ssl_dll=$(find "$bindir" -maxdepth 1 -name 'libssl-3.dll' -type f | head -n1)
+print_metric 'openssl_dll' "${ssl_dll#$dir/}" "$ssl_dll"
+# Secondary DLLs affected by the debloat configuration.
+for name in 'librsvg-2-*.dll' 'libcroco-*.dll' 'gdk_pixbuf-*.dll' 'libgtk-3-*.dll'; do
+    f=$(find "$bindir" -maxdepth 1 -name "$name" -type f | head -n1)
+    [ -n "$f" ] && print_metric "$(basename "$f" .dll)" "${f#$dir/}" "$f"
+done
+# Total size of the bin directory (all shipped DLLs/exes).
+bin_bytes=$(du -sb "$bindir" | cut -f1)
+bin_human=$(numfmt --to=iec --suffix=B "$bin_bytes" 2>/dev/null || echo "${bin_bytes}B")
+printf 'metric bin_total=%s bytes=%s\n' "$bin_human" "$bin_bytes"
+echo "=== Debloat metrics end ==="
+
 if [ "$errors" -gt 0 ]; then
     exit 1
 fi
