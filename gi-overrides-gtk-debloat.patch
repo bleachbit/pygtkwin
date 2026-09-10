@@ -1,0 +1,66 @@
+diff --git a/gi/overrides/Gtk.py b/gi/overrides/Gtk.py
+index fdb8f17..4324a56 100644
+--- a/gi/overrides/Gtk.py
++++ b/gi/overrides/Gtk.py
+@@ -739,7 +739,7 @@ if GTK3:
+     __all__.append("FontSelectionDialog")
+ 
+ 
+-if GTK3:
++if GTK3 and hasattr(Gtk, "RecentChooserDialog"):
+ 
+     class RecentChooserDialog(Gtk.RecentChooserDialog):
+         # Note, the "manager" keyword must work across the entire 3.x series because
+@@ -755,21 +755,22 @@ if GTK3:
+     __all__.append("RecentChooserDialog")
+ 
+ 
+-class IconView(Gtk.IconView):
+-    if GTK3:
+-        __init__ = deprecated_init(
+-            Gtk.IconView.__init__,
+-            arg_names=("model",),
+-            category=PyGTKDeprecationWarning,
+-        )
++if hasattr(Gtk, "IconView"):
++    class IconView(Gtk.IconView):
++        if GTK3:
++            __init__ = deprecated_init(
++                Gtk.IconView.__init__,
++                arg_names=("model",),
++                category=PyGTKDeprecationWarning,
++            )
+ 
+-    get_item_at_pos = strip_boolean_result(Gtk.IconView.get_item_at_pos)
+-    get_visible_range = strip_boolean_result(Gtk.IconView.get_visible_range)
+-    get_dest_item_at_pos = strip_boolean_result(Gtk.IconView.get_dest_item_at_pos)
++        get_item_at_pos = strip_boolean_result(Gtk.IconView.get_item_at_pos)
++        get_visible_range = strip_boolean_result(Gtk.IconView.get_visible_range)
++        get_dest_item_at_pos = strip_boolean_result(Gtk.IconView.get_dest_item_at_pos)
+ 
+ 
+-IconView = override(IconView)
+-__all__.append("IconView")
++    IconView = override(IconView)
++    __all__.append("IconView")
+ 
+ 
+ if GTK3:
+@@ -793,12 +794,13 @@ IMContext = override(IMContext)
+ __all__.append("IMContext")
+ 
+ 
+-class RecentInfo(Gtk.RecentInfo):
+-    get_application_info = strip_boolean_result(Gtk.RecentInfo.get_application_info)
++if hasattr(Gtk, "RecentInfo"):
++    class RecentInfo(Gtk.RecentInfo):
++        get_application_info = strip_boolean_result(Gtk.RecentInfo.get_application_info)
+ 
+ 
+-RecentInfo = override(RecentInfo)
+-__all__.append("RecentInfo")
++    RecentInfo = override(RecentInfo)
++    __all__.append("RecentInfo")
+ 
+ 
+ class TextBuffer(Gtk.TextBuffer):
