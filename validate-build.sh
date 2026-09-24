@@ -31,6 +31,7 @@ echo "=== Build validation: $bindir ==="
 
 check_glob 'python.exe'           'python.exe'           'tools/python3'
 check_glob 'gdbus.exe'            'gdbus.exe'            'tools/glib'
+check_glob 'fc-cache.exe'         'fc-cache.exe'         'tools/fontconfig'
 check_glob 'rsvg-*.dll'           'librsvg DLL'          'bin'
 check_glob 'croco-*.dll'          'libcroco DLL'         'bin'
 check_glob 'gdk_pixbuf-*.dll'     'gdk-pixbuf DLL'       'bin'

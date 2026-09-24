@@ -70,6 +70,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "vcpkg install python3 failed" }
           python -m ensurepip --upgrade
           python -m pip install virtualenv
+          ./vcpkg install fontconfig[tools]:x86-windows --binarysource=$binarySource
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg install fontconfig failed" }
           ./vcpkg install gobject-introspection:x86-windows --binarysource=$binarySource
           if ($LASTEXITCODE -ne 0) { throw "vcpkg install gobject-introspection failed" }
           ./vcpkg install harfbuzz[introspection]:x86-windows pango[introspection]:x86-windows gdk-pixbuf[introspection]:x86-windows atk[introspection]:x86-windows libcroco:x86-windows librsvg:x86-windows --binarysource=$binarySource
