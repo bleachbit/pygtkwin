@@ -18,6 +18,8 @@ permissions:
 
 env:
   VCPKG_TRIPLET: x86-windows
+  VCPKG_DEFAULT_HOST_TRIPLET: x86-windows
+  VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}/triplets
   GTK_VERSION: 3.24
 
 jobs:
@@ -41,7 +43,7 @@ jobs:
           path: |
             ~/.cache/vcpkg/archives
             C:\Users\runneradmin\AppData\Local\vcpkg\archives
-          key: ${{ runner.os }}-vcpkg-${{ env.VCPKG_COMMIT }}-${{ hashFiles('0002-vcpkg-glib-unc.patch', 'librsvg-pixbufloader-svg.patch', 'gdk-pixbuf-png-only.patch') }}
+          key: ${{ runner.os }}-vcpkg-${{ env.VCPKG_COMMIT }}-${{ hashFiles('0002-vcpkg-glib-unc.patch', 'librsvg-pixbufloader-svg.patch', 'gdk-pixbuf-png-only.patch', 'triplets/**') }}
           restore-keys: |
             ${{ runner.os }}-vcpkg-${{ env.VCPKG_COMMIT }}-
             ${{ runner.os }}-vcpkg-
@@ -66,18 +68,10 @@ jobs:
           $cacheDir = Join-Path $env:LOCALAPPDATA 'vcpkg\archives'
           New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
           $binarySource = "clear;files,$cacheDir,readwrite"
-          ./vcpkg install python3:x86-windows --binarysource=$binarySource
-          if ($LASTEXITCODE -ne 0) { throw "vcpkg install python3 failed" }
           python -m ensurepip --upgrade
           python -m pip install virtualenv
-          ./vcpkg install fontconfig[tools]:x86-windows --binarysource=$binarySource
-          if ($LASTEXITCODE -ne 0) { throw "vcpkg install fontconfig failed" }
-          ./vcpkg install gobject-introspection:x86-windows --binarysource=$binarySource
-          if ($LASTEXITCODE -ne 0) { throw "vcpkg install gobject-introspection failed" }
-          ./vcpkg install harfbuzz[introspection]:x86-windows pango[introspection]:x86-windows gdk-pixbuf[introspection]:x86-windows atk[introspection]:x86-windows libcroco:x86-windows librsvg:x86-windows --binarysource=$binarySource
-          if ($LASTEXITCODE -ne 0) { throw "vcpkg install harfbuzz/pango/gdk-pixbuf/atk/libcroco/librsvg failed" }
-          ./vcpkg install gtk3[introspection]:x86-windows --binarysource=$binarySource
-          if ($LASTEXITCODE -ne 0) { throw "vcpkg install gtk3 failed" }
+          ./vcpkg install python3:x86-windows fontconfig[tools]:x86-windows gobject-introspection:x86-windows harfbuzz[introspection]:x86-windows pango[introspection]:x86-windows gdk-pixbuf[introspection]:x86-windows atk[introspection]:x86-windows libcroco:x86-windows librsvg:x86-windows gtk3[introspection]:x86-windows --binarysource=$binarySource
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg install failed" }
 
       - name: Generate platform-specific typelibs
         shell: bash
