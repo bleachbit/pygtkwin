@@ -14,6 +14,16 @@ fi
 
 errors=0
 
+# How file(1) labels the binaries of each architecture
+case "$(basename "$dir")" in
+    x86-windows) bits=32 pe_type=PE32 ;;
+    x64-windows) bits=64 pe_type=PE32+ ;;
+    *)
+        echo "ERROR: unknown triplet: $(basename "$dir")" >&2
+        exit 1
+        ;;
+esac
+
 check_glob() {
     local pattern="$1" label="$2" subdir="$3"
     local searchdir="$dir/$subdir"
@@ -41,6 +51,20 @@ check_glob 'glib-*.dll'           'glib DLL'             'bin'
 check_glob 'libxml2.dll'          'libxml2 DLL'          'bin'
 check_glob 'GLibWin32-2.0.typelib' 'GLibWin32 typelib'   'lib/girepository-1.0'
 check_glob 'GioWin32-2.0.typelib'  'GioWin32 typelib'    'lib/girepository-1.0'
+check_glob "gspawn-win$bits-helper.exe"         'gspawn helper'         'tools/glib'
+check_glob "gspawn-win$bits-helper-console.exe" 'gspawn console helper' 'tools/glib'
+
+# Lib/ is left out: pip ships launchers for every architecture there.
+# One file call for everything, since forks are slow under Git Bash.
+shopt -s nullglob
+types=$(file -N -F $'\t' -- "$bindir"/*.dll "$dir"/tools/*/*.dll \
+    "$dir"/tools/*/*.exe "$dir"/tools/python3/DLLs/*.pyd)
+while IFS=$'\t' read -r f type; do
+    if [[ "$type" != " $pe_type "* ]]; then
+        echo "FAIL: ${f#$dir/} is not $pe_type:$type"
+        errors=$((errors + 1))
+    fi
+done <<< "$types"
 
 echo "=== Validation complete: $errors error(s) ==="
 
@@ -65,7 +89,7 @@ echo "=== Debloat metrics ==="
 gtk_dll=$(find "$bindir" -maxdepth 1 -name 'gtk-3-*.dll' -type f | head -n1)
 print_metric 'gtk3_dll' "${gtk_dll#$dir/}" "$gtk_dll"
 # openssl DLL is the openssl debloat target (0005-vcpkg-openssl-debloat.patch).
-ssl_dll=$(find "$bindir" -maxdepth 1 -name 'libssl-3.dll' -type f | head -n1)
+ssl_dll=$(find "$bindir" -maxdepth 1 -name 'libssl-3*.dll' -type f | head -n1)
 print_metric 'openssl_dll' "${ssl_dll#$dir/}" "$ssl_dll"
 # Secondary DLLs affected by the debloat configuration.
 for name in 'librsvg-2-*.dll' 'libcroco-*.dll' 'gdk_pixbuf-*.dll' 'libgtk-3-*.dll'; do
