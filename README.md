@@ -5,7 +5,11 @@ to use on Microsoft Windows. This includes introspection support
 and a PyGObject wheel. Consistent with PyPI packaging practices, we
 use Microsoft Visual C++ and vcpkg instead of gcc and MSYS2.
 
+Each release has a 32-bit (`x86-windows`) and a 64-bit (`x64-windows`)
+build, each with its own PyGObject wheel.
+
 As of 2026-09-09, this project builds:
+
 * Python 3.12.13
 * GTK 3.24.52
 * PyGObject 3.58.0
@@ -14,7 +18,7 @@ As of 2026-09-09, this project builds:
 * Fontconfig 2.17.1
 * HarfBuzz 14.4.0
 
-The build environment is GitHub Actions with MSVC++ 2022.
+The build environment is GitHub Actions with MSVC++ 2026.
 For more information about the build environment and build
 process, see the [GitHub Action YAML files](https://github.com/bleachbit/pygtkwin/tree/main/.github/workflows)
 or [logs](https://github.com/bleachbit/pygtkwin/actions).
@@ -39,7 +43,7 @@ Use the [GitHub CLI (`gh`)](https://github.com/cli/cli/).
 
 List recent runs:
 
-```
+```console
 $ gh run list
 STATUS  TITLE                              WORKFLOW                 BRANCH  EVENT  ID           ELAPSED  AGE
 ✓       Restore vcpkg install for libcroso  Build GTK themes         dev     push   29065380640  1m3s     about 11 hours ago
@@ -49,6 +53,6 @@ X       Restore vcpkg install for libcroso  Build and Package PyGTK  dev     pus
 View the log for a specific run. Recent versions of `gh` stream the log
 directly without downloading it first; if the command fails, upgrade `gh`.
 
-```
-$ gh run view 29065380636 --log
+```bash
+gh run view 29065380636 --log
 ```

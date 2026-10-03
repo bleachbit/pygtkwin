@@ -1,58 +1,95 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
-set -x
+set -euo pipefail
 
-current_dir=$(pwd)
-work_dir=$(mktemp -d --suffix=gtktheme)
-cd $work_dir
+# Minimal PATH
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+# Node and npm from setup-node on CI, the system ones otherwise
+PATH="${NODE_DIR:+${NODE_DIR}:}${PATH}"
 
-download_and_extract() {
-    local url="$1"
-    local filename="${url##*/}"
+# Build gtk-themes.7z in the current directory. Run npm ci first for svgo.
+# ASSET_CACHE_DIR, if set, keeps the optimized PNGs and SVGs between runs.
 
-    wget -q "$url" -O "$filename" || { echo "Failed to download $filename"; exit 1; }
-    sha256sum "$filename"
-    tar -xf "$filename"
-    rm "$filename"
-}
-
-ADAWAITA_VERSION=50.0
-ADAWAITA_URL="https://download.gnome.org/sources/adwaita-icon-theme/50/adwaita-icon-theme-${ADAWAITA_VERSION}.tar.xz"
-download_and_extract $ADAWAITA_URL
-mkdir -p gtk-themes/share/icons
-mv adwaita-icon-theme-${ADAWAITA_VERSION}/Adwaita gtk-themes/share/icons
-cp adwaita-icon-theme-${ADAWAITA_VERSION}/index.theme gtk-themes/share/icons/Adwaita/index.theme
+ADWAITA_VERSION=50.0
+ADWAITA_SHA256=fac6e0401fca714780561a081b8f7e27c3bc1db34ebda4da175081f26b24d460
+ADWAITA_URL="https://download.gnome.org/sources/adwaita-icon-theme/50/adwaita-icon-theme-${ADWAITA_VERSION}.tar.xz"
 
 # Adwaita 47+ split legacy (fullcolor) icons into a separate package.
 # The main index.theme inherits AdwaitaLegacy, so both are required.
-ADAWAITA_LEGACY_VERSION=46.2
-ADAWAITA_LEGACY_URL="https://download.gnome.org/sources/adwaita-icon-theme-legacy/46/adwaita-icon-theme-legacy-${ADAWAITA_LEGACY_VERSION}.tar.xz"
-download_and_extract $ADAWAITA_LEGACY_URL
-mv adwaita-icon-theme-legacy-${ADAWAITA_LEGACY_VERSION}/AdwaitaLegacy gtk-themes/share/icons
-cp adwaita-icon-theme-legacy-${ADAWAITA_LEGACY_VERSION}/index.theme gtk-themes/share/icons/AdwaitaLegacy/index.theme
+ADWAITA_LEGACY_VERSION=46.2
+ADWAITA_LEGACY_SHA256=548480f58589a54b72d18833b755b15ffbd567e3187249d74e2e1f8f99f22fb4
+ADWAITA_LEGACY_URL="https://download.gnome.org/sources/adwaita-icon-theme-legacy/46/adwaita-icon-theme-legacy-${ADWAITA_LEGACY_VERSION}.tar.xz"
 
 # hicolor is the ultimate fallback icon theme.
 HICOLOR_VERSION=0.18
+HICOLOR_SHA256=db0e50a80aa3bf64bb45cbca5cf9f75efd9348cf2ac690b907435238c3cf81d7
 HICOLOR_URL="https://icon-theme.freedesktop.org/releases/hicolor-icon-theme-${HICOLOR_VERSION}.tar.xz"
-download_and_extract $HICOLOR_URL
-mkdir -p gtk-themes/share/icons/hicolor
-cp hicolor-icon-theme-${HICOLOR_VERSION}/index.theme gtk-themes/share/icons/hicolor/index.theme
 
-GTK_VER=3.24.52
-GTK_URL="https://download.gnome.org/sources/gtk/3.24/gtk-$GTK_VER.tar.xz"
-download_and_extract $GTK_URL
-cd gtk-$GTK_VER/gtk/theme/Adwaita || { echo "Failed to cd into Adwaita"; exit 1; }
+GTK_VERSION=3.24.52
+GTK_SHA256=80931fa472a77b9a164f6740e3c0b444fac6770054632d35a7ff9d679e5e7b9f
+GTK_URL="https://download.gnome.org/sources/gtk/3.24/gtk-${GTK_VERSION}.tar.xz"
+
+GNOME_THEMES_VERSION=3.28
+GNOME_THEMES_SHA256=7c4ba0bff001f06d8983cfc105adaac42df1d1267a2591798a780bac557a5819
+GNOME_THEMES_URL="https://download.gnome.org/sources/gnome-themes-extra/3.28/gnome-themes-extra-${GNOME_THEMES_VERSION}.tar.xz"
+
+for tool in sassc oxipng npm 7z; do
+    if ! command -v "${tool}" > /dev/null 2>&1; then
+        echo "Error: ${tool} not found" >&2
+        exit 1
+    fi
+done
+
+current_dir=$(pwd)
+repo_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+cache_root=""
+if [[ -n "${ASSET_CACHE_DIR:-}" ]]; then
+    cache_root=$(realpath -m -- "${ASSET_CACHE_DIR}")
+fi
+work_dir=$(mktemp -d --suffix=gtktheme)
+trap 'rm -rf -- "${work_dir}"' EXIT
+cd "${work_dir}"
+
+download_and_extract() {
+    local url="$1" sha256="$2"
+    local filename="${url##*/}"
+
+    if ! curl -fsSL --retry 3 "${url}" -o "${filename}"; then
+        echo "Failed to download ${filename}" >&2
+        exit 1
+    fi
+
+    echo "${sha256}  ${filename}" | sha256sum -c -
+    tar -xf "${filename}"
+    rm -f -- "${filename}"
+}
+
+download_and_extract "${ADWAITA_URL}" "${ADWAITA_SHA256}"
+mkdir -p gtk-themes/share/icons
+mv "adwaita-icon-theme-${ADWAITA_VERSION}/Adwaita" "gtk-themes/share/icons"
+cp "adwaita-icon-theme-${ADWAITA_VERSION}/index.theme" "gtk-themes/share/icons/Adwaita/index.theme"
+
+download_and_extract "${ADWAITA_LEGACY_URL}" "${ADWAITA_LEGACY_SHA256}"
+mv "adwaita-icon-theme-legacy-${ADWAITA_LEGACY_VERSION}/AdwaitaLegacy" "gtk-themes/share/icons"
+cp "adwaita-icon-theme-legacy-${ADWAITA_LEGACY_VERSION}/index.theme" "gtk-themes/share/icons/AdwaitaLegacy/index.theme"
+
+download_and_extract "${HICOLOR_URL}" "${HICOLOR_SHA256}"
+mkdir -p gtk-themes/share/icons/hicolor
+cp "hicolor-icon-theme-${HICOLOR_VERSION}/index.theme" "gtk-themes/share/icons/hicolor/index.theme"
+
+download_and_extract "${GTK_URL}" "${GTK_SHA256}"
+cd "gtk-${GTK_VERSION}/gtk/theme/Adwaita"
 ./parse-sass.sh
-if [ ! -f gtk-contained.css ]; then
-    echo "Error: gtk-contained.css not found"
+if [[ ! -f gtk-contained.css ]]; then
+    echo "Error: gtk-contained.css not found" >&2
     exit 1
 fi
-cd $work_dir
+
+cd "${work_dir}"
 mkdir -p gtk-themes/share/themes/Adwaita/gtk-3.0
-mv gtk-$GTK_VER/gtk/theme/Adwaita/gtk-contained.css gtk-themes/share/themes/Adwaita/gtk-3.0/gtk.css
-cp gtk-$GTK_VER/gtk/theme/Adwaita/gtk-contained-dark.css gtk-themes/share/themes/Adwaita/gtk-3.0/gtk-dark.css
-cp -r gtk-$GTK_VER/gtk/theme/Adwaita/assets gtk-themes/share/themes/Adwaita/gtk-3.0/assets
+mv "gtk-${GTK_VERSION}/gtk/theme/Adwaita/gtk-contained.css" "gtk-themes/share/themes/Adwaita/gtk-3.0/gtk.css"
+cp "gtk-${GTK_VERSION}/gtk/theme/Adwaita/gtk-contained-dark.css" "gtk-themes/share/themes/Adwaita/gtk-3.0/gtk-dark.css"
+cp -r "gtk-${GTK_VERSION}/gtk/theme/Adwaita/assets" "gtk-themes/share/themes/Adwaita/gtk-3.0/assets"
 
 # GTK expects a theme index.theme; BleachBit's installer also checks for it.
 cat > gtk-themes/share/themes/Adwaita/index.theme << 'EOF'
@@ -68,60 +105,151 @@ CursorTheme=Adwaita
 CursorSize=24
 EOF
 
-GNOME_THEMES_VER=3.28
-GTKTHEMES_URL="https://download.gnome.org/sources/gnome-themes-extra/3.28/gnome-themes-extra-$GNOME_THEMES_VER.tar.xz"
-download_and_extract $GTKTHEMES_URL
+download_and_extract "${GNOME_THEMES_URL}" "${GNOME_THEMES_SHA256}"
 mkdir -p gtk-themes/share/icons/HighContrast
-rm gnome-themes-extra-${GNOME_THEMES_VER}/themes/HighContrast/icons/scalable/Makefile.am
-mv gnome-themes-extra-${GNOME_THEMES_VER}/themes/HighContrast/icons/scalable gtk-themes/share/icons/HighContrast
-cp gnome-themes-extra-${GNOME_THEMES_VER}/themes/HighContrast/icons/index.theme gtk-themes/share/icons/HighContrast/index.theme
+rm -f -- "gnome-themes-extra-${GNOME_THEMES_VERSION}/themes/HighContrast/icons/scalable/Makefile.am"
+mv "gnome-themes-extra-${GNOME_THEMES_VERSION}/themes/HighContrast/icons/scalable" "gtk-themes/share/icons/HighContrast"
+cp "gnome-themes-extra-${GNOME_THEMES_VERSION}/themes/HighContrast/icons/index.theme" "gtk-themes/share/icons/HighContrast/index.theme"
 
 # Optimize PNG and SVG assets to shrink the final archive.
 # oxipng losslessly recompresses PNGs; svgo strips redundancy from SVGs.
 # Both run in place. They are timed and the total size delta is printed so
 # the size/time tradeoff is visible in the build log.
-command -v oxipng >/dev/null 2>&1 || { echo "Error: oxipng not found; install it to optimize PNGs"; exit 1; }
-command -v svgo   >/dev/null 2>&1 || { echo "Error: svgo not found; install it to optimize SVGs"; exit 1; }
+oxipng_args=(--opt max --alpha --fix -s --preserve)
+# The Zopfli option is much slower but further shrinks the images
+oxipng_zopfli_args=(--opt max --alpha --fix --preserve -z --fast)
+svgo_args=(--multipass --quiet)
+svgo=(npm --prefix "${repo_dir}" run --silent svgo --)
 
 # Sum of byte sizes of all regular files under $1 matching name glob $2.
 total_bytes() {
     find "$1" -type f -name "$2" -printf '%s\n' | awk '{s+=$1} END {print s+0}'
 }
 
+# Sum of byte sizes of the files in the NUL-separated list $1
+list_bytes() {
+    xargs -0 -r stat -c '%s' < "$1" | awk '{s+=$1} END {print s+0}'
+}
+
 # Print "label: before -> after bytes (saved, pct%)".
 print_savings() {
     local label="$1" before="$2" after="$3" saved pct
-    saved=$(( before - after ))
-    if [ "$before" -gt 0 ]; then
-        pct=$(awk -v s="$saved" -v b="$before" 'BEGIN{printf "%.2f", s*100/b}')
+    saved=$((before - after))
+    if [[ "${before}" -gt 0 ]]; then
+        pct=$(awk -v s="${saved}" -v b="${before}" 'BEGIN{printf "%.2f", s*100/b}')
     else
         pct="0.00"
     fi
-    echo "$label: $before -> $after bytes ($saved saved, ${pct}%)"
+    echo "${label}: ${before} -> ${after} bytes (${saved} saved, ${pct}%)"
 }
 
-# Without Zopfli option, oxipng runs quickly.
-echo "==> Optimizing PNG files with oxipng"
-png_before=$(total_bytes gtk-themes '*.png')
-time oxipng --opt max --strip safe --alpha --fix --preserve -r gtk-themes
-png_after=$(total_bytes gtk-themes '*.png')
-print_savings "PNG" "$png_before" "$png_after"
+# Both take a NUL-separated file list
+optimize_pngs() {
+    local list="$1" before after
 
-# The oxipng Zopfli option is much slower but further shrinks the
-# images.
-echo "==> Re-compressing PNGs with oxipng Zopfli (-z --fast)"
-png_zopfli_before=$(total_bytes gtk-themes '*.png')
-time oxipng --opt max --strip safe --alpha --fix --preserve -z --fast -r gtk-themes
-png_zopfli_after=$(total_bytes gtk-themes '*.png')
-print_savings "PNG (zopfli)" "$png_zopfli_before" "$png_zopfli_after"
+    # Without Zopfli option, oxipng runs quickly.
+    echo "==> Optimizing PNG files with oxipng"
+    before=$(list_bytes "${list}")
+    time xargs -0 -r oxipng "${oxipng_args[@]}" < "${list}"
+    after=$(list_bytes "${list}")
+    print_savings "PNG" "${before}" "${after}"
 
-echo "==> Optimizing SVG files with svgo"
-svg_before=$(total_bytes gtk-themes '*.svg')
-time find gtk-themes -type f -name '*.svg' -print0 \
-    | xargs -r -0 svgo --multipass --quiet
-svg_after=$(total_bytes gtk-themes '*.svg')
-print_savings "SVG" "$svg_before" "$svg_after"
+    echo "==> Re-compressing PNGs with oxipng Zopfli (-z --fast)"
+    before="${after}"
+    time xargs -0 -r oxipng "${oxipng_zopfli_args[@]}" < "${list}"
+    after=$(list_bytes "${list}")
+    print_savings "PNG (zopfli)" "${before}" "${after}"
+}
 
-7za a -tzip -mx=9 -mfb=258 -mpass=15 "$current_dir/gtk-themes.zip" gtk-themes
-du -b "$current_dir/gtk-themes.zip"
-sha256sum "$current_dir/gtk-themes.zip"
+optimize_svgs() {
+    local list="$1" before after
+
+    echo "==> Optimizing SVG files with svgo"
+    before=$(list_bytes "${list}")
+    # npm hands the whole command to sh as one argument, capped at 128 KiB
+    time xargs -0 -r -n 500 "${svgo[@]}" "${svgo_args[@]}" < "${list}"
+    after=$(list_bytes "${list}")
+    print_savings "SVG" "${before}" "${after}"
+}
+
+# Neither oxipng nor svgo can skip already optimized files, so results are
+# cached. Each run writes a new cache from its own files, which drops stale
+# entries.
+if [[ -n "${cache_root}" ]]; then
+    rm -rf -- "${cache_root}.old"
+    if [[ -d "${cache_root}" ]]; then
+        mv -- "${cache_root}" "${cache_root}.old"
+    fi
+    mkdir -p -- "${cache_root}"
+fi
+
+# optimize_cached <label> <name glob> <cache key> <optimize function>
+# The cache mirrors gtk-themes and keeps the input hashes in an index. A file
+# is reused when both its path and input hash match, so restoring and saving
+# take one cp each instead of one per file. The key holds the tool version and
+# flags, so output from other settings is never reused.
+optimize_cached() {
+    local label="$1" pattern="$2" key="$3" optimize="$4"
+    local sums="${work_dir}/${label}.sums" hits="${work_dir}/${label}.hits"
+    local misses="${work_dir}/${label}.misses" list="${work_dir}/${label}.list"
+    local ns="" old="" index=/dev/null before after
+
+    if [[ -n "${cache_root}" ]]; then
+        ns="${label}-$(printf '%s' "${key}" | sha256sum | cut -c1-16)"
+        old="${cache_root}.old/${ns}"
+        ns="${cache_root}/${ns}"
+        if [[ -f "${old}/index" ]]; then
+            index="${old}/index"
+        fi
+    fi
+
+    before=$(total_bytes gtk-themes "${pattern}")
+    # Lines are "<hash>  <path>", so the path starts at column 67
+    find gtk-themes -type f -name "${pattern}" -print0 | xargs -0 -r sha256sum |
+        LC_ALL=C sort > "${sums}"
+    : > "${hits}"
+    LC_ALL=C comm -23 "${sums}" "${index}" | cut -c67- > "${misses}"
+    # An entry missing from the cache is optimized again instead of failing
+    while IFS= read -r path; do
+        if [[ -f "${old}/${path}" ]]; then
+            printf '%s\n' "${path}" >> "${hits}"
+        else
+            printf '%s\n' "${path}" >> "${misses}"
+        fi
+    done < <(LC_ALL=C comm -12 "${sums}" "${index}" | cut -c67-)
+    echo "==> ${label}: $(wc -l < "${hits}") cached, $(wc -l < "${misses}") to optimize"
+
+    if [[ -s "${hits}" ]]; then
+        (cd "${old}" && xargs -d '\n' cp -p --parents -t "${work_dir}" -- < "${hits}")
+    fi
+    if [[ -s "${misses}" ]]; then
+        # Absolute paths, since npm runs svgo from the repo dir
+        while IFS= read -r path; do
+            printf '%s/%s\0' "${work_dir}" "${path}"
+        done < "${misses}" > "${list}"
+        "${optimize}" "${list}"
+    fi
+
+    if [[ -n "${ns}" ]]; then
+        mkdir -p -- "${ns}"
+        cut -c67- "${sums}" | xargs -d '\n' -r cp -p --parents -t "${ns}" --
+        cp -- "${sums}" "${ns}/index"
+    fi
+    after=$(total_bytes gtk-themes "${pattern}")
+    print_savings "${label} total" "${before}" "${after}"
+}
+
+optimize_cached PNG '*.png' \
+    "$(oxipng --version) ${oxipng_args[*]} ${oxipng_zopfli_args[*]}" optimize_pngs
+optimize_cached SVG '*.svg' \
+    "$("${svgo[@]}" --version) ${svgo_args[*]}" optimize_svgs
+
+if [[ -n "${cache_root}" ]]; then
+    rm -rf -- "${cache_root}.old"
+fi
+
+# 7z a would add to an archive left over from an earlier run
+rm -f -- "${current_dir}/gtk-themes.7z"
+7z a -t7z -m0=LZMA2 -mx=9 -mmt=on "${current_dir}/gtk-themes.7z" gtk-themes
+du -b "${current_dir}/gtk-themes.7z"
+sha256sum "${current_dir}/gtk-themes.7z"
