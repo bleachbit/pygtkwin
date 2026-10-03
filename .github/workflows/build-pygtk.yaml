@@ -142,6 +142,7 @@ jobs:
           # Otherwise only the last command's exit code fails the step
           $PSNativeCommandUseErrorActionPreference = $true
           & $env:PYTHON -V
+          & $env:PYTHON test_python.py
           & $env:PYTHON show_versions.py --dll-directory "$env:VCPKG_DIR\bin"
 
       - name: Smoke test HTTPS (TLS 1.2/1.3)
