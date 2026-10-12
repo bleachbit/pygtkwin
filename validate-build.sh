@@ -51,6 +51,14 @@ check_glob 'rsvg-*.dll' 'librsvg DLL' 'bin'
 check_glob 'croco-*.dll' 'libcroco DLL' 'bin'
 check_glob 'gdk_pixbuf-*.dll' 'gdk-pixbuf DLL' 'bin'
 check_glob 'pixbufloader-svg.dll' 'pixbufloader-svg DLL' 'lib/gdk-pixbuf-2.0/2.10.0/loaders'
+# gdk-pixbuf-query-loaders skips a loader it can't load and still exits 0
+loaders_cache="${dir}/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache"
+if grep -q 'pixbufloader-svg\.dll"' "${loaders_cache}" 2> /dev/null; then
+    echo "OK:   loaders.cache lists pixbufloader-svg"
+else
+    echo "FAIL: loaders.cache does not list pixbufloader-svg (${loaders_cache})"
+    errors=$((errors + 1))
+fi
 check_glob 'cairo*.dll' 'cairo DLL' 'bin'
 check_glob 'glib-*.dll' 'glib DLL' 'bin'
 check_glob 'libxml2.dll' 'libxml2 DLL' 'bin'

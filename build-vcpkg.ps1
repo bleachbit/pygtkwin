@@ -68,6 +68,14 @@ try {
     if ($Phase -ne 'Prepare') {
         ./vcpkg install @ports --triplet $Triplet $binarySource
 
+        # gdk-pixbuf writes loaders.cache before librsvg adds the SVG loader
+        $tree = Join-Path (Get-Location).Path "installed/$Triplet"
+        $pixbufDir = Join-Path $tree 'lib/gdk-pixbuf-2.0/2.10.0'
+        $env:GDK_PIXBUF_MODULEDIR = Join-Path $pixbufDir 'loaders'
+        $env:GDK_PIXBUF_MODULE_FILE = Join-Path $pixbufDir 'loaders.cache'
+        $env:PATH = "$(Join-Path $tree 'bin');$env:PATH"
+        & (Join-Path $tree 'tools/gdk-pixbuf/gdk-pixbuf-query-loaders.exe') --update-cache
+
         if ($PruneCache) {
             # Archives are stored as <cacheDir>/<ab>/<abi>.zip
             $abis = Select-String -LiteralPath ./installed/vcpkg/status -Pattern '^Abi: (\w+)' |
