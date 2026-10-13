@@ -11,9 +11,11 @@ on:
     paths-ignore: &paths-ignore
       - '.github/dependabot.yml'
       - '.github/workflows/build-gtk-themes.yaml'
+      - '.github/workflows/cleanup-caches.yml'
       - '.github/workflows/zizmor.yml'
       - '.gitattributes'
       - '.gitignore'
+      - '.shellcheckrc'
       - 'install-theme-tools.sh'
       - 'LICENSE'
       - 'make_gtk_theme.sh'
