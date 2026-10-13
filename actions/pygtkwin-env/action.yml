@@ -1,14 +1,9 @@
-name: pygtkwin environemnt
+name: pygtkwin environment
 description: |
   Initializes pygtkwin environment
 runs:
   using: composite
   steps:
-    - name: Set up MSVC
-      uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
-      with:
-        arch: x86
-
     - name: Configure pygtkwin environment
       shell: pwsh
       run: |
@@ -24,5 +19,4 @@ runs:
         $pythonExe = Join-Path $pythonDir 'python.exe'
         [System.IO.File]::AppendAllText($env:GITHUB_ENV, "PYTHON=$pythonExe`n")
 
-        $updatedPath = "$pythonDir;$pythonDir\Scripts;$env:PATH"
-        [System.IO.File]::AppendAllText($env:GITHUB_ENV, "PATH=$updatedPath`n")
+        [System.IO.File]::AppendAllText($env:GITHUB_PATH, "$pythonDir`n$pythonDir\Scripts`n")
