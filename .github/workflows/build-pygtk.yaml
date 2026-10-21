@@ -41,6 +41,10 @@ jobs:
     name: Build python and PyGTK (${{ matrix.triplet }})
     runs-on: windows-latest
     timeout-minutes: 180
+    permissions:
+      contents: read
+      # OIDC token for Azure login (Artifact Signing)
+      id-token: write
     strategy:
       # A cancelled matrix job would not save its vcpkg cache
       fail-fast: false
@@ -129,6 +133,41 @@ jobs:
         shell: bash
         run: |
           ./validate-build.sh "vcpkg/installed/$VCPKG_TRIPLET"
+
+      # PRs skip signing: forked PRs cannot reach the federated credential, and
+      # unreviewed code should never receive the signature.
+      - name: Azure login
+        if: github.event_name != 'pull_request'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign binaries with Azure Artifact Signing
+        if: github.event_name != 'pull_request'
+        uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
+        with:
+          endpoint: https://eus.codesigning.azure.net/
+          signing-account-name: bleachbitcodesign
+          certificate-profile-name: AndrewProfile
+          files-folder: ${{ github.workspace }}\vcpkg\installed\${{ env.VCPKG_TRIPLET }}
+          files-folder-filter: exe,dll,pyd
+          files-folder-recurse: true
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      - name: Verify signatures
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        run: |
+          $bad = Get-ChildItem -Recurse -Path "vcpkg\installed\$env:VCPKG_TRIPLET" -Include *.exe,*.dll,*.pyd |
+            Get-AuthenticodeSignature | Where-Object Status -ne 'Valid'
+          if ($bad) {
+            $bad | ForEach-Object { Write-Warning "$($_.Status): $($_.Path)" }
+            throw "Files without a valid signature remain"
+          }
 
       - name: Package the build
         shell: pwsh
