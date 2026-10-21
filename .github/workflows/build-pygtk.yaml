@@ -136,6 +136,24 @@ jobs:
 
       # PRs skip signing: forked PRs cannot reach the federated credential, and
       # unreviewed code should never receive the signature.
+      # vcpkg copies identical DLLs into many tools/ dirs; signing one copy per
+      # unique content hash and copying it back saves ~half the signing calls.
+      - name: Deduplicate files for signing
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        run: |
+          $root = "vcpkg\installed\$env:VCPKG_TRIPLET"
+          $pes = Get-ChildItem -Recurse -Path $root -Include *.exe,*.dll,*.pyd
+          $groups = $pes | Group-Object { (Get-FileHash $_.FullName -Algorithm SHA256).Hash }
+          $map = [ordered]@{}
+          foreach ($g in $groups) {
+            $paths = @($g.Group | ForEach-Object { $_.FullName.Substring((Get-Location).Path.Length + 1) })
+            $map[$paths[0]] = @($paths | Select-Object -Skip 1)
+          }
+          $map | ConvertTo-Json -Depth 2 | Set-Content sign-map.json
+          ($map.Keys | ForEach-Object { "./$($_ -replace '\\','/')" }) | Set-Content sign-catalog.txt
+          Write-Host "Files: $($pes.Count), unique: $($map.Count)"
+
       - name: Azure login
         if: github.event_name != 'pull_request'
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
@@ -151,12 +169,19 @@ jobs:
           endpoint: https://eus.codesigning.azure.net/
           signing-account-name: bleachbitcodesign
           certificate-profile-name: AndrewProfile
-          files-folder: ${{ github.workspace }}\vcpkg\installed\${{ env.VCPKG_TRIPLET }}
-          files-folder-filter: exe,dll,pyd
-          files-folder-recurse: true
+          files-catalog: ${{ github.workspace }}\sign-catalog.txt
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
+
+      - name: Copy signatures to duplicate files
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        run: |
+          $map = Get-Content sign-map.json | ConvertFrom-Json
+          foreach ($p in $map.PSObject.Properties) {
+            foreach ($dup in $p.Value) { Copy-Item $p.Name $dup }
+          }
 
       - name: Verify signatures
         if: github.event_name != 'pull_request'
@@ -205,6 +230,10 @@ jobs:
     name: Build pygobject (${{ matrix.triplet }})
     runs-on: windows-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      # OIDC token for Azure login (Artifact Signing)
+      id-token: write
     needs: vcpkg-build
     strategy:
       fail-fast: false
@@ -249,6 +278,44 @@ jobs:
       - name: Test wheel
         shell: pwsh
         run: ./test-pygobject.ps1 -Wheel $env:PYGOBJECT_WHL
+
+      # The wheel is a zip, so its .pyd files are signed by unpacking,
+      # signing, and repacking; wheel pack regenerates RECORD with new hashes.
+      - name: Azure login
+        if: github.event_name != 'pull_request'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Extract wheel for signing
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        run: |
+          python -m pip install wheel
+          python -m wheel unpack "$env:PYGOBJECT_WHL" -d wheel-signed
+
+      - name: Sign wheel contents with Azure Artifact Signing
+        if: github.event_name != 'pull_request'
+        uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
+        with:
+          endpoint: https://eus.codesigning.azure.net/
+          signing-account-name: bleachbitcodesign
+          certificate-profile-name: AndrewProfile
+          files-folder: ${{ github.workspace }}\wheel-signed
+          files-folder-filter: exe,dll,pyd
+          files-folder-recurse: true
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      - name: Repack signed wheel
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        run: |
+          $dir = Get-ChildItem wheel-signed -Directory | Select-Object -First 1
+          python -m wheel pack $dir.FullName --dest-dir (Split-Path $env:PYGOBJECT_WHL -Parent)
 
       - name: Upload wheel
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
