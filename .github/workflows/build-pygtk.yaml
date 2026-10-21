@@ -41,6 +41,10 @@ jobs:
     name: Build python and PyGTK (${{ matrix.triplet }})
     runs-on: windows-latest
     timeout-minutes: 180
+    permissions:
+      contents: read
+      # OIDC token for Azure login (Artifact Signing)
+      id-token: write
     strategy:
       # A cancelled matrix job would not save its vcpkg cache
       fail-fast: false
@@ -130,6 +134,67 @@ jobs:
         run: |
           ./validate-build.sh "vcpkg/installed/$VCPKG_TRIPLET"
 
+      # Signing runs on release tags (and on dev-signing for testing). Other
+      # refs skip it: the federated credential does not cover them, and
+      # unreviewed or throwaway code should not receive the signature anyway.
+      # vcpkg copies identical DLLs into many tools/ dirs; signing one copy per
+      # unique content hash and copying it back saves ~half the signing calls.
+      - name: Deduplicate files for signing
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
+        shell: pwsh
+        run: |
+          $root = "vcpkg\installed\$env:VCPKG_TRIPLET"
+          $pes = Get-ChildItem -Recurse -Path $root -Include *.exe,*.dll,*.pyd
+          $groups = $pes | Group-Object { (Get-FileHash $_.FullName -Algorithm SHA256).Hash }
+          $map = [ordered]@{}
+          foreach ($g in $groups) {
+            $paths = @($g.Group | ForEach-Object { $_.FullName.Substring((Get-Location).Path.Length + 1) })
+            $map[$paths[0]] = @($paths | Select-Object -Skip 1)
+          }
+          $map | ConvertTo-Json -Depth 2 | Set-Content sign-map.json
+          ($map.Keys | ForEach-Object { "./$($_ -replace '\\','/')" }) | Set-Content sign-catalog.txt
+          Write-Host "Files: $($pes.Count), unique: $($map.Count)"
+
+      - name: Azure login
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign binaries with Azure Artifact Signing
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
+        uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
+        with:
+          endpoint: https://eus.codesigning.azure.net/
+          signing-account-name: bleachbitcodesign
+          certificate-profile-name: AndrewProfile
+          files-catalog: ${{ github.workspace }}\sign-catalog.txt
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      - name: Copy signatures to duplicate files
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
+        shell: pwsh
+        run: |
+          $map = Get-Content sign-map.json | ConvertFrom-Json
+          foreach ($p in $map.PSObject.Properties) {
+            foreach ($dup in $p.Value) { Copy-Item $p.Name $dup }
+          }
+
+      - name: Verify signatures
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
+        shell: pwsh
+        run: |
+          $bad = Get-ChildItem -Recurse -Path "vcpkg\installed\$env:VCPKG_TRIPLET" -Include *.exe,*.dll,*.pyd |
+            Get-AuthenticodeSignature | Where-Object Status -ne 'Valid'
+          if ($bad) {
+            $bad | ForEach-Object { Write-Warning "$($_.Status): $($_.Path)" }
+            throw "Files without a valid signature remain"
+          }
+
       - name: Package the build
         shell: pwsh
         env:
@@ -166,6 +231,10 @@ jobs:
     name: Build pygobject (${{ matrix.triplet }})
     runs-on: windows-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      # OIDC token for Azure login (Artifact Signing)
+      id-token: write
     needs: vcpkg-build
     strategy:
       fail-fast: false
@@ -210,6 +279,45 @@ jobs:
       - name: Test wheel
         shell: pwsh
         run: ./test-pygobject.ps1 -Wheel $env:PYGOBJECT_WHL
+
+      # Signed on tags and dev-signing, same as the vcpkg job above.
+      # The wheel is a zip, so its .pyd files are signed by unpacking,
+      # signing, and repacking; wheel pack regenerates RECORD with new hashes.
+      - name: Azure login
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Extract wheel for signing
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
+        shell: pwsh
+        run: |
+          python -m pip install wheel
+          python -m wheel unpack "$env:PYGOBJECT_WHL" -d wheel-signed
+
+      - name: Sign wheel contents with Azure Artifact Signing
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
+        uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
+        with:
+          endpoint: https://eus.codesigning.azure.net/
+          signing-account-name: bleachbitcodesign
+          certificate-profile-name: AndrewProfile
+          files-folder: ${{ github.workspace }}\wheel-signed
+          files-folder-filter: exe,dll,pyd
+          files-folder-recurse: true
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      - name: Repack signed wheel
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
+        shell: pwsh
+        run: |
+          $dir = Get-ChildItem wheel-signed -Directory | Select-Object -First 1
+          python -m wheel pack $dir.FullName --dest-dir (Split-Path $env:PYGOBJECT_WHL -Parent)
 
       - name: Upload wheel
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
