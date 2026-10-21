@@ -134,12 +134,13 @@ jobs:
         run: |
           ./validate-build.sh "vcpkg/installed/$VCPKG_TRIPLET"
 
-      # PRs skip signing: forked PRs cannot reach the federated credential, and
-      # unreviewed code should never receive the signature.
+      # Signing runs on release tags (and on dev-signing for testing). Other
+      # refs skip it: the federated credential does not cover them, and
+      # unreviewed or throwaway code should not receive the signature anyway.
       # vcpkg copies identical DLLs into many tools/ dirs; signing one copy per
       # unique content hash and copying it back saves ~half the signing calls.
       - name: Deduplicate files for signing
-        if: github.event_name != 'pull_request'
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
         shell: pwsh
         run: |
           $root = "vcpkg\installed\$env:VCPKG_TRIPLET"
@@ -155,7 +156,7 @@ jobs:
           Write-Host "Files: $($pes.Count), unique: $($map.Count)"
 
       - name: Azure login
-        if: github.event_name != 'pull_request'
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -163,7 +164,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Sign binaries with Azure Artifact Signing
-        if: github.event_name != 'pull_request'
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
         uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
         with:
           endpoint: https://eus.codesigning.azure.net/
@@ -175,7 +176,7 @@ jobs:
           timestamp-digest: SHA256
 
       - name: Copy signatures to duplicate files
-        if: github.event_name != 'pull_request'
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
         shell: pwsh
         run: |
           $map = Get-Content sign-map.json | ConvertFrom-Json
@@ -184,7 +185,7 @@ jobs:
           }
 
       - name: Verify signatures
-        if: github.event_name != 'pull_request'
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
         shell: pwsh
         run: |
           $bad = Get-ChildItem -Recurse -Path "vcpkg\installed\$env:VCPKG_TRIPLET" -Include *.exe,*.dll,*.pyd |
@@ -279,10 +280,11 @@ jobs:
         shell: pwsh
         run: ./test-pygobject.ps1 -Wheel $env:PYGOBJECT_WHL
 
+      # Signed on tags and dev-signing, same as the vcpkg job above.
       # The wheel is a zip, so its .pyd files are signed by unpacking,
       # signing, and repacking; wheel pack regenerates RECORD with new hashes.
       - name: Azure login
-        if: github.event_name != 'pull_request'
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -290,14 +292,14 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Extract wheel for signing
-        if: github.event_name != 'pull_request'
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
         shell: pwsh
         run: |
           python -m pip install wheel
           python -m wheel unpack "$env:PYGOBJECT_WHL" -d wheel-signed
 
       - name: Sign wheel contents with Azure Artifact Signing
-        if: github.event_name != 'pull_request'
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
         uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82 # v2.0.0
         with:
           endpoint: https://eus.codesigning.azure.net/
@@ -311,7 +313,7 @@ jobs:
           timestamp-digest: SHA256
 
       - name: Repack signed wheel
-        if: github.event_name != 'pull_request'
+        if: github.ref_type == 'tag' || github.ref_name == 'dev-signing'
         shell: pwsh
         run: |
           $dir = Get-ChildItem wheel-signed -Directory | Select-Object -First 1
