@@ -10,9 +10,9 @@ PATH="${NODE_DIR:+${NODE_DIR}:}${PATH}"
 # Build gtk-themes.7z in the current directory. Run npm ci first for svgo.
 # ASSET_CACHE_DIR, if set, keeps the optimized PNGs and SVGs between runs.
 
-ADWAITA_VERSION=50.0
-ADWAITA_SHA256=fac6e0401fca714780561a081b8f7e27c3bc1db34ebda4da175081f26b24d460
-ADWAITA_URL="https://download.gnome.org/sources/adwaita-icon-theme/50/adwaita-icon-theme-${ADWAITA_VERSION}.tar.xz"
+ADWAITA_VERSION=51.0
+ADWAITA_SHA256=ba561cf3c96305a47179fa5605856ad695c9238ea07f7093aebd9ba80c4e323b
+ADWAITA_URL="https://download.gnome.org/sources/adwaita-icon-theme/51/adwaita-icon-theme-${ADWAITA_VERSION}.tar.xz"
 
 # Adwaita 47+ split legacy (fullcolor) icons into a separate package.
 # The main index.theme inherits AdwaitaLegacy, so both are required.
