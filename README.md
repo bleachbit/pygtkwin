@@ -8,15 +8,9 @@ use Microsoft Visual C++ and vcpkg instead of gcc and MSYS2.
 Each release has a 32-bit (`x86-windows`) and a 64-bit (`x64-windows`)
 build, each with its own PyGObject wheel.
 
-As of 2026-09-09, this project builds:
-
-* Python 3.12.13
-* GTK 3.24.52
-* PyGObject 3.58.0
-* Cairo 1.18.4
-* Pango 1.58.0
-* Fontconfig 2.17.1
-* HarfBuzz 14.4.0
+The notes of each release list the versions of Python, GTK, PyGObject
+and the main libraries it was built with. See the
+[latest release](https://github.com/bleachbit/pygtkwin/releases/latest).
 
 The build environment is GitHub Actions with MSVC++ 2026.
 For more information about the build environment and build
