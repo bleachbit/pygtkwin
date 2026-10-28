@@ -74,11 +74,16 @@ jobs:
         with:
           python-version: '3.12'
 
+      # vcpkg runs `python -m virtualenv` with the first python on PATH. A
+      # venv keeps the pins away from the runner's own packages, like pipx.
       - name: Install Python requirements
         shell: bash
         run: |
-          python -m pip install --no-deps -r requirements-vcpkg.txt
-          python -m pip check
+          python -m venv "$RUNNER_TEMP/vcpkg-python"
+          venv_dir="$RUNNER_TEMP/vcpkg-python/Scripts"
+          "$venv_dir/python" -m pip install --disable-pip-version-check --no-deps -r requirements-vcpkg.txt
+          "$venv_dir/python" -m pip check
+          echo "$venv_dir" >> "$GITHUB_PATH"
 
       - name: Test the GIR filter
         shell: bash
