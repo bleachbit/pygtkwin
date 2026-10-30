@@ -159,6 +159,21 @@ jobs:
           & $env:PYTHON test_https.py --dll-directory "$env:VCPKG_DIR\bin"
           if ($LASTEXITCODE -ne 0) { throw "HTTPS smoke test failed" }
 
+      - name: Write the versions
+        shell: pwsh
+        run: |
+          ./write-versions.ps1 -Triplet $env:VCPKG_TRIPLET -Out versions.md
+          Get-Content versions.md | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload the versions
+        # Both triplets build the same versions
+        if: matrix.triplet == 'x64-windows'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: versions.md
+          archive: false
+          if-no-files-found: error
+
       - name: Upload the build artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -183,8 +198,6 @@ jobs:
 
     env:
       VCPKG_TRIPLET: ${{ matrix.triplet }}
-      PYGOBJECT_VERSION: 3.58.1
-      PYGOBJECT_SHA256: 4c80598ade17fbaa7798e01a25d0bf29ce109740786026a074c5c62bb3e79d23
 
     steps:
       - name: Checkout code
@@ -250,4 +263,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
+          NOTES_FILE: versions.md
         run: ./create-release.sh "$TAG" gtk*.7z pygobject-*.whl

@@ -1,7 +1,7 @@
 #Requires -Version 7.4
 # Build the PyGObject wheel against the extracted GTK build and export its
-# path as PYGOBJECT_WHL. Needs the pygtkwin-env variables, PYGOBJECT_VERSION
-# and PYGOBJECT_SHA256.
+# path as PYGOBJECT_WHL. Needs the pygtkwin-env variables. The version and
+# hashes come from requirements-pygobject.txt, which Dependabot updates.
 # Usage: ./build-pygobject.ps1 -WheelTag win32
 
 param(
@@ -21,14 +21,23 @@ if (-not (Test-Path -LiteralPath $env:PYTHON -PathType Leaf)) {
 $pyVersion = & $env:PYTHON -c 'import sysconfig; print(sysconfig.get_python_version())'
 $pyTag = $pyVersion.Replace('.', '')
 
-$version = $env:PYGOBJECT_VERSION
-$series = ($version -split '\.')[0..1] -join '.'
+$requirement = Get-Content (Join-Path $PSScriptRoot 'requirements-pygobject.txt') -Raw
+if ($requirement -notmatch '(?mi)^pygobject==(\S+)') {
+    throw 'No pygobject pin in requirements-pygobject.txt'
+}
+$version = $Matches[1]
+# One hash per file on PyPI, so this also accepts wheels if they ever appear
+$hashes = [regex]::Matches($requirement, '--hash=sha256:([0-9a-f]{64})') | ForEach-Object { $_.Groups[1].Value }
+if (-not $hashes) {
+    throw 'No hashes in requirements-pygobject.txt'
+}
+
 $tarball = 'pygobject.tar.gz'
-Invoke-WebRequest "https://download.gnome.org/sources/pygobject/$series/pygobject-$version.tar.gz" -OutFile $tarball -MaximumRetryCount 3 -RetryIntervalSec 5
+Invoke-WebRequest "https://files.pythonhosted.org/packages/source/p/pygobject/pygobject-$version.tar.gz" -OutFile $tarball -MaximumRetryCount 3 -RetryIntervalSec 5
 $hash = (Get-FileHash $tarball -Algorithm SHA256).Hash
 Write-Output "SHA256 $tarball $hash"
-if ($hash -ne $env:PYGOBJECT_SHA256) {
-    throw "SHA256 mismatch for $tarball, expected $env:PYGOBJECT_SHA256"
+if ($hashes -notcontains $hash) {
+    throw "SHA256 mismatch for $tarball, expected one of $($hashes -join ', ')"
 }
 tar -xf $tarball
 
